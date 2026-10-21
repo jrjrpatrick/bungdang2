@@ -1,0 +1,2974 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>수장의 길 - 붕당 생존 시뮬레이션</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+:root{--navy:#1d223a;--navy2:#262d4c;--navy3:#12162a;--gold:#d8b46a;--gold2:#f3dfae;--gold3:#a67c34;--red:#b3241c;--red2:#d13a2a;
+--cream:#f4ead2;--ink:#241a10;--muted:#aeb2c8;--line:rgba(216,180,106,.42);
+--serif:'Gowun Batang','Nanum Myeongjo','Batang',serif;--sans:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+--goldGrad:linear-gradient(180deg,#fff8e2 0%,#f3dfae 32%,#d8b46a 64%,#9d7330 100%);
+--cloudA:radial-gradient(ellipse 60% 40% at 95% 0%,rgba(243,223,174,.10),transparent 70%);
+--cloudB:radial-gradient(ellipse 55% 35% at 0% 100%,rgba(243,223,174,.08),transparent 70%)}
+html,body{height:100%}
+body{margin:0;background:var(--navy3);color:var(--cream);font-family:var(--sans);overflow:hidden;word-break:keep-all;overflow-wrap:break-word}
+h1,h2,h3,.evCtx,.say,.stC,.rCard p{text-wrap:balance}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,[role=button]:focus-visible,input:focus-visible{outline:3px solid var(--gold2);outline-offset:2px}
+.hidden{display:none!important}
+.goldText{background:var(--goldGrad);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 0 rgba(70,45,10,.75)) drop-shadow(0 10px 26px rgba(0,0,0,.55))}
+.navyCard{background:var(--cloudA),var(--cloudB),linear-gradient(180deg,#252b49,#1b2037);border:1px solid var(--line);border-radius:14px;box-shadow:inset 0 0 0 4px #1d223a,inset 0 0 0 5px rgba(216,180,106,.22),0 18px 50px rgba(0,0,0,.55)}
+
+/* 배경: 편전 그림(img/hall.jpg)이 없으면 단청 느낌의 그라데이션 */
+#bgHall{position:fixed;inset:-24px;z-index:0;background:
+ radial-gradient(ellipse 70% 55% at 50% 35%,rgba(160,40,30,.35),transparent 70%),
+ repeating-linear-gradient(90deg,rgba(216,180,106,.05) 0 2px,transparent 2px 120px),
+ linear-gradient(180deg,#3a1418 0%,#241018 45%,#12162a 100%);filter:brightness(.9)}
+#bgHall.img{background-size:cover;background-position:center 22%;filter:blur(2.5px) brightness(.56) saturate(1.08);transform:scale(1.03)}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:2;pointer-events:none}
+
+/* 가운데 왕 */
+#king{position:fixed;left:50%;bottom:58px;z-index:1;transform-origin:50% 100%;transform:translateX(-50%) scale(.8);transition:transform 1.2s cubic-bezier(.2,.8,.2,1);pointer-events:none;text-align:center}
+#king img{display:block;height:min(46vh,430px);width:auto;filter:drop-shadow(0 12px 30px rgba(0,0,0,.6))}
+#king .kFallback{width:min(34vh,300px);height:min(46vh,430px);position:relative}
+#king .kFallback svg{width:100%;height:100%;filter:drop-shadow(0 12px 30px rgba(0,0,0,.6))}
+
+/* 위쪽 표시줄 */
+#hud{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:16px;padding:calc(env(safe-area-inset-top,0px) + 10px) 18px 20px;pointer-events:none;background:linear-gradient(to bottom,rgba(18,22,42,.95) 0,rgba(18,22,42,.72) 60%,rgba(18,22,42,0))}
+#hud .yr{font-weight:900;font-size:clamp(28px,4vw,50px);line-height:1}
+#hud .yr small{font-size:.4em;margin-left:3px;font-weight:700}
+.plaque{display:flex;flex-direction:column;align-items:center;line-height:1.15;padding:6px 16px 7px;border-radius:6px;background:linear-gradient(180deg,#8d1d14,#5d100b);border:2px solid var(--gold);box-shadow:inset 0 0 0 2px #3e0906,inset 0 0 0 3px rgba(243,223,174,.35),0 6px 18px rgba(0,0,0,.5)}
+.plaque span{font-size:11px;color:#f0cf95;letter-spacing:.08em}
+.plaque b{font-family:var(--serif);font-size:clamp(18px,2.2vw,26px);color:var(--gold2);text-shadow:0 1px 0 #3e0906}
+#hud .lives{display:flex;align-items:center;gap:6px;line-height:1}
+#hud .lives .heart,#hud .lives b{font-weight:900;font-size:clamp(28px,3.2vw,40px);color:#ff5a4a;text-shadow:0 0 14px rgba(255,90,74,.55),0 2px 8px rgba(0,0,0,.6);display:inline-block}
+#hud .lives b{color:#ffe6df}
+#hud .lives .heart{animation:beat 1.4s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.15)}30%{transform:scale(1)}}
+#hud .lives b.hit{animation:hit .6s}
+@keyframes hit{30%{transform:scale(1.6);color:#fff}}
+.comboHud{font-weight:900;font-size:18px;color:#ffe08a;text-shadow:0 0 12px rgba(255,200,80,.7)}
+.comboHud:empty{display:none}
+#hud .ctrl{margin-left:auto;display:flex;gap:6px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end}
+.chip{background:rgba(29,34,58,.82);border:1px solid var(--line);color:var(--cream);border-radius:999px;padding:6px 12px;font-size:13px;transition:background .15s,border-color .15s}
+.chip:hover{border-color:var(--gold2)}
+.chip.on{background:var(--goldGrad);color:#2a1d08;border-color:var(--gold2);font-weight:700}
+.who-me{font-size:12.5px;color:#c8bb95;white-space:nowrap}
+
+/* 저울 (왕권 ↔ 신권) */
+#scaleBox{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 74px);transform:translateX(-50%);z-index:5;width:min(330px,62vw);padding:6px 10px 6px;text-align:center;pointer-events:none;border-radius:14px;background:rgba(18,22,42,.6);border:1px solid rgba(216,180,106,.3);backdrop-filter:blur(2px)}
+#scaleBox .sTitle{font-size:11.5px;letter-spacing:.12em;color:#c8bb95}
+#scaleBox svg{width:100%;height:auto;display:block;overflow:visible}
+#scaleBox .sState{font-size:13px;font-weight:700;color:var(--gold2);min-height:1.3em}
+#scaleBox .sState.warn{color:#ffb4a3}
+#scaleBox.pulse{animation:sPulse 1.2s ease-out}
+@keyframes sPulse{0%{box-shadow:0 0 0 0 rgba(243,223,174,.7)}100%{box-shadow:0 0 0 22px rgba(243,223,174,0)}}
+#beam,#beamGhost{transition:transform 1.4s cubic-bezier(.25,.9,.3,1.15)}
+#event:not(.hidden) ~ #scaleBox, body.evOn #scaleBox{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 44px)}
+
+/* 아래 연표 막대 */
+#tl{position:fixed;left:22px;right:22px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:5;pointer-events:none}
+#tl .track{position:relative;height:4px;background:rgba(243,223,174,.18);border-radius:2px}
+#tlFill{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--goldGrad);border-radius:2px;box-shadow:0 0 12px rgba(243,223,174,.6)}
+.mk{position:absolute;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;transform:rotate(45deg);background:#1d223a;border:2px solid var(--gold)}
+.mk.ok{background:#3fae74;border-color:#d4f5de}.mk.bad{background:var(--red2);border-color:#ffc2b5}
+#tl .ends{display:flex;justify-content:space-between;font-size:11px;color:#d7cfb8;margin-top:6px;text-shadow:0 1px 4px #000}
+
+/* 계보도 미니 */
+#mini{position:fixed;left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 40px);width:230px;z-index:4;padding:8px 8px 2px;cursor:pointer;transition:transform .15s}
+#mini:hover{transform:translateY(-2px)}
+#mini p{margin:0 0 2px 4px;font-size:12px;color:var(--gold2)}
+#mini p span{float:right;margin-right:4px;font-size:11px;color:#c8bb95}
+#mini svg{width:100%;height:auto;display:block}
+@media(max-width:820px){#mini{display:none}}
+
+/* 옆 카드 */
+#cards{position:fixed;inset:0;pointer-events:none;z-index:4}
+.card{position:absolute;width:var(--cw);display:flex;gap:12px;align-items:flex-start;padding:13px 15px 12px;border-radius:14px;background:linear-gradient(180deg,rgba(37,43,73,.97),rgba(27,32,55,.97));border:1px solid rgba(216,180,106,.4);border-left:5px solid var(--c);box-shadow:0 12px 34px rgba(0,0,0,.55),0 0 30px -8px var(--c);opacity:0;transform:translateX(-30px) scale(.94);transition:opacity .45s,transform .55s cubic-bezier(.2,.8,.2,1.2);overflow:hidden}
+.card.sR{border-left-width:1px;border-right:5px solid var(--c);transform:translateX(30px) scale(.94)}
+.card.in{opacity:1;transform:none}
+.card .av{flex:none;width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-family:var(--serif);font-weight:700;font-size:24px;background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.45),transparent 55%),var(--c);color:var(--avc);border:2px solid var(--gold);box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.card .tx{min-width:0;flex:1}
+.card .tx em{display:block;font-style:normal;font-size:12px;color:#c8bb95}
+.card .tx b{display:block;font-size:clamp(17px,1.5vw,21px);font-weight:900;line-height:1.25;color:var(--gold2);margin:2px 0 3px}
+.card .tx span{display:block;font-size:clamp(14px,1.2vw,16px);color:#eeeaf6;line-height:1.55}
+.card .cb{display:block;height:2px;margin-top:9px;background:rgba(255,255,255,.1);border-radius:1px;overflow:hidden}
+.card .cb u{display:block;height:100%;background:var(--c);animation:cbar linear forwards}
+@keyframes cbar{from{width:100%}to{width:0}}
+
+/* 그 시절 조선 */
+#hist{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + max(350px,46%));z-index:5;width:min(540px,86vw);padding:15px 22px 13px;text-align:center;pointer-events:none;opacity:0;transform:translate(-50%,14px) scale(.96);transition:opacity .45s,transform .5s cubic-bezier(.2,.8,.2,1.2)}
+#hist.show{opacity:1;transform:translate(-50%,0)}
+#hist .hk{font-size:12.5px;color:#c8bb95;letter-spacing:.05em}
+#hist .hk b{color:var(--gold2)}
+#hist .ht{font-weight:900;font-size:clamp(23px,2.8vw,32px);margin:4px 0 6px;background:var(--goldGrad);-webkit-background-clip:text;background-clip:text;color:transparent}
+#hist.t-war .ht{background:linear-gradient(180deg,#ffe0cf,#ff9b7b 60%,#c8402f);-webkit-background-clip:text;background-clip:text}
+#hist .hc{font-size:clamp(14px,1.5vw,16.5px);line-height:1.65;color:#ece8f4}
+#hist .hb{height:2px;margin-top:10px;background:rgba(255,255,255,.1);overflow:hidden}
+#hist .hb i{display:block;height:100%;width:100%;background:var(--goldGrad);transition:width linear}
+
+/* 큰 글자 팝업·배너 */
+#pop{position:fixed;left:50%;top:40%;z-index:9;transform:translate(-50%,-50%);opacity:0;pointer-events:none;text-align:center;white-space:nowrap}
+#pop.show{animation:popHit 1.5s cubic-bezier(.2,.9,.25,1.35) forwards}
+@keyframes popHit{0%{opacity:0;transform:translate(-50%,-50%) scale(2.4) rotate(-6deg)}14%{opacity:1;transform:translate(-50%,-50%) scale(.92) rotate(-3deg)}24%{transform:translate(-50%,-50%) scale(1.05) rotate(-3deg)}80%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-3deg)}100%{opacity:0;transform:translate(-50%,-62%) rotate(-3deg)}}
+#pop .pm{font-weight:900;font-size:clamp(52px,9vw,116px);line-height:1;background:var(--goldGrad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 #5a3a10) drop-shadow(0 0 30px rgba(255,210,120,.8)) drop-shadow(0 12px 30px #000)}
+#pop.bad .pm{background:linear-gradient(180deg,#fff,#ffb3a0 40%,#d93a2a);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 4px 0 #4a0c08) drop-shadow(0 0 26px rgba(255,80,60,.7)) drop-shadow(0 12px 30px #000)}
+#pop .pc{display:inline-block;margin-top:12px;padding:8px 20px;border-radius:999px;font-weight:900;font-size:clamp(17px,2.1vw,25px);color:#2a1d08;background:var(--goldGrad);box-shadow:0 8px 24px rgba(0,0,0,.5)}
+#pop.bad .pc{color:#fff;background:linear-gradient(180deg,#d13a2a,#8d1d14)}
+#banner{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 232px);transform:translate(-50%,-12px);z-index:6;text-align:center;pointer-events:none;opacity:0;transition:opacity .5s,transform .5s;width:min(92vw,780px)}
+#banner.show{opacity:1;transform:translate(-50%,0)}
+#banner .b1{font-weight:900;font-size:clamp(28px,4.4vw,52px);background:var(--goldGrad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 rgba(70,45,10,.8)) drop-shadow(0 6px 22px #000)}
+#banner .b2{display:inline-block;font-size:clamp(13px,1.6vw,17px);color:#f4ead2;margin-top:8px;padding:6px 16px;border-radius:999px;background:rgba(18,22,42,.78);border:1px solid var(--line)}
+#banner .b2:empty{display:none}
+#banner.war .b1{background:linear-gradient(180deg,#ffe0cf,#ff8b6b 60%,#b3241c);-webkit-background-clip:text;background-clip:text}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:0;transition:opacity .7s;background:radial-gradient(ellipse at center,transparent 42%,rgba(200,40,20,.6) 100%)}
+#vig.on{opacity:1}
+#pauseOv{position:fixed;inset:0;z-index:6;display:grid;place-items:center;background:rgba(10,12,24,.55);pointer-events:none}
+#pauseOv b{font-size:44px;font-weight:900}
+#toast{position:fixed;left:50%;top:96px;transform:translateX(-50%);z-index:30;background:rgba(29,34,58,.96);border:1px solid var(--line);color:var(--cream);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;transition:.4s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+
+/* 이야기 카드 (가운데, 시간 멈춤) */
+#story{position:fixed;inset:0;z-index:8;display:grid;place-items:center;padding:16px;background:rgba(8,10,22,.55);backdrop-filter:blur(2px)}
+.stBox{width:min(640px,94vw);max-height:92vh;overflow:auto;padding:22px 24px 18px;animation:pop .45s;text-align:center}
+.stBox .stImg{display:block;width:100%;max-height:34vh;object-fit:cover;border-radius:10px;border:1px solid var(--line);margin:0 0 14px}
+.stK{display:inline-block;padding:4px 14px;border-radius:5px;font-size:13px;font-weight:700;color:var(--gold2);background:linear-gradient(180deg,#8d1d14,#5d100b);border:1.5px solid var(--gold);box-shadow:inset 0 0 0 2px #3e0906}
+.stT{font-weight:900;font-size:clamp(28px,4vw,44px);margin:8px 0 10px;line-height:1.15}
+.stC{font-family:var(--serif);font-size:clamp(16px,1.9vw,20px);line-height:1.75;color:#f1ead8;text-align:left;background:linear-gradient(180deg,#fbf4e2,#efe2c2);color:var(--ink);border-radius:8px;padding:14px 16px;border-left:4px solid var(--red)}
+.stC b{background:linear-gradient(transparent 58%,rgba(217,179,94,.55) 58%)}
+.stTip{font-size:14px;color:#ffe08a;margin:12px 0 0;line-height:1.6}
+.stNav{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:10px}
+.stDots{display:flex;gap:6px}.stDots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2)}.stDots i.on{background:var(--gold2)}
+
+/* 사건(상소) */
+#event{position:fixed;inset:0;z-index:7;pointer-events:none}
+#event .dim{position:absolute;inset:0;background:radial-gradient(ellipse 75% 65% at 50% 60%,rgba(0,0,0,0) 0,rgba(8,10,22,.45) 100%);animation:fade .4s}
+@keyframes fade{from{opacity:0}}
+#event .head{position:absolute;top:calc(env(safe-area-inset-top,0px) + 74px);left:50%;transform:translateX(-50%);width:min(800px,94vw);text-align:center;animation:fade .7s}
+.evYear{display:inline-block;padding:4px 14px;border-radius:5px;font-size:13px;font-weight:700;color:var(--gold2);background:linear-gradient(180deg,#8d1d14,#5d100b);border:1.5px solid var(--gold);box-shadow:inset 0 0 0 2px #3e0906}
+.evStage{display:inline-block;margin-left:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;color:#1b1510;background:var(--sc,#d8b46a)}
+.evTitle{font-weight:900;font-size:clamp(34px,5.2vw,62px);margin:8px 0;line-height:1.1;background:var(--goldGrad);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 rgba(70,45,10,.8)) drop-shadow(0 8px 24px #000)}
+.evCtx{margin:0 auto;font-size:clamp(14px,1.55vw,17px);line-height:1.7;color:#f1ead8;max-width:700px;padding:10px 18px;border-radius:12px;background:rgba(18,22,42,.78);border:1px solid rgba(216,180,106,.28)}
+.evHint{display:inline-block;margin-top:10px;max-width:94vw;font-size:14px;color:var(--cream);background:rgba(18,22,42,.85);padding:8px 18px;border-radius:999px;border:1px solid var(--line)}
+.bubble{position:absolute;top:40%;width:min(31vw,390px);pointer-events:auto;cursor:pointer;text-align:left;color:var(--ink);background:linear-gradient(180deg,#fbf4e2,#efe2c2);border-radius:6px;padding:16px 18px 12px;box-shadow:0 18px 46px rgba(0,0,0,.6),inset 0 0 0 1px rgba(120,90,40,.25),inset 0 0 40px rgba(170,130,60,.18);animation:pop .55s cubic-bezier(.2,.9,.3,1.3);transition:transform .15s}
+.bubble::before,.bubble::after{content:"";position:absolute;left:-8px;right:-8px;height:12px;border-radius:6px;background:linear-gradient(180deg,var(--c3,#c9a85f),var(--c) 45%,var(--c4,#5a4520));box-shadow:0 2px 6px rgba(0,0,0,.45)}
+.bubble::before{top:-8px}.bubble::after{bottom:-8px}
+.bubble.L{left:2.5vw}.bubble.R{right:2.5vw}
+.bubble:hover{transform:translateY(-4px)}
+.bubble .who{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px dashed rgba(120,90,40,.35)}
+.bubble .fac{font-weight:900;font-size:clamp(23px,2.8vw,33px);line-height:1.1;color:var(--c2)}
+.bubble .per{font-weight:700;font-size:clamp(15px,1.7vw,19px);color:#4a3b22}
+.bubble .say{font-family:var(--serif);font-size:clamp(15px,1.7vw,19.5px);line-height:1.6;min-height:3.2em}
+.bubble .say b{font-weight:700;color:#120c05;background:linear-gradient(transparent 58%,var(--hl) 58%)}
+.bubble .pick{font-size:12px;color:#7a6a4c;margin-top:8px}
+.evBoth{position:absolute;left:50%;top:40%;transform:translateX(-50%);pointer-events:auto;text-align:center;width:min(24vw,260px)}
+.evBoth button{background:var(--goldGrad);color:#2a1d08;border:1px solid #fff3cf;border-radius:16px;padding:14px 18px;font-weight:900;font-size:16px;line-height:1.4;box-shadow:0 8px 30px rgba(216,180,106,.45);animation:pop .55s}
+.evBoth small{display:block;margin-top:8px;font-size:12px;color:var(--cream)}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}
+@media(max-width:760px){.bubble{width:45vw;top:46%;padding:10px 12px}.bubble .say{font-size:14px}.evCtx{font-size:13px}.evBoth{top:auto;bottom:120px;width:80vw}}
+
+/* 결과 카드 */
+#result{position:fixed;inset:0;z-index:8;display:grid;place-items:start center;padding-top:calc(env(safe-area-inset-top,0px) + 84px);background:rgba(8,10,22,.3);overflow:auto}
+.rCard{width:min(580px,92vw);padding:28px 26px 20px;position:relative;animation:pop .45s;margin-bottom:150px}
+.rStamp{position:absolute;right:22px;top:-26px;transform:rotate(8deg);font-family:var(--serif);font-weight:700;font-size:17px;line-height:1.1;width:80px;height:80px;display:grid;place-items:center;text-align:center;border-radius:10px;color:#fff1dc;border:3px double rgba(255,241,220,.8);box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.rCard.ok .rStamp{background:#b3241c}.rCard.bad .rStamp{background:#4b2f73}
+.rCard h3{font-weight:900;font-size:25px;margin:2px 0 10px;color:var(--gold2)}
+.rCard.bad h3{color:#ffb4a3}
+.rCard p{margin:8px 0;line-height:1.7;font-size:15px;color:#ece8f4}
+.rCard .real{background:linear-gradient(180deg,#fbf4e2,#efe2c2);color:var(--ink);border-left:4px solid var(--red);padding:11px 13px;border-radius:8px}
+.rCard .real b{background:linear-gradient(transparent 58%,rgba(217,179,94,.55) 58%)}
+.rCard .fix{font-size:14px;color:#ffe08a;background:rgba(216,180,106,.1);border:1px dashed var(--gold);border-radius:10px;padding:9px 12px}
+.rTags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.rTags span{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--line)}
+.btn,.big.primary{border:1px solid #fff3cf;border-radius:999px;padding:11px 24px;font-weight:900;font-size:15px;background:var(--goldGrad);color:#2a1d08}
+
+/* 첫 화면 */
+.screen{position:fixed;inset:0;z-index:10;overflow-y:auto;background:var(--navy)}
+#title{overflow:hidden}
+#title .tArt{position:absolute;top:0;right:0;bottom:0;width:min(56.25vh,52vw);overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#5a1a16,#1d223a 75%)}
+#title .tArt img{width:100%;height:100%;object-fit:cover;display:block}
+#title .tArt .tArtFb{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--serif);font-size:min(30vh,240px);color:rgba(243,223,174,.13)}
+#title .tArt::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--navy) 0,rgba(29,34,58,.55) 12%,rgba(29,34,58,0) 32%),linear-gradient(0deg,rgba(29,34,58,.6),rgba(29,34,58,0) 25%)}
+#title .tSide{position:absolute;top:0;bottom:0;left:0;right:min(56.25vh,52vw);background:var(--cloudA),var(--cloudB),var(--navy);overflow-y:auto}
+.tInner{max-width:640px;min-height:100%;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 30px) 24px 34px;text-align:center;display:flex;flex-direction:column;justify-content:center}
+.kicker{font-size:13px;letter-spacing:.2em;color:#c8bb95}
+.logo{font-weight:900;font-size:clamp(40px,5.6vw,84px);white-space:nowrap;padding:0 .1em;line-height:1.1;margin:8px 0 0;animation:rise 1s cubic-bezier(.2,.9,.3,1.2)}
+.subtitle{font-size:clamp(20px,2.8vw,32px);font-weight:700;color:#efc9a6;margin:8px 0 0;text-shadow:0 2px 12px rgba(0,0,0,.5);animation:rise 1s .15s both}
+@keyframes rise{from{opacity:0;transform:translateY(30px) scale(.94)}}
+.sparkle{display:inline-block;color:var(--gold2);opacity:.7;margin:14px 0 0;font-size:15px;letter-spacing:.6em}
+.tag1{font-family:var(--serif);font-size:clamp(15px,1.9vw,19px);color:#e6dfcb;margin:12px auto 18px}
+.form{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px;margin:0 auto 10px;max-width:520px;text-align:left}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:#c8bb95}
+.form input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--cream);font-size:17px;font-family:inherit}
+.form input::placeholder{color:#7f849d}
+@media(max-width:520px){.form{grid-template-columns:1fr 1fr}.form label.room{grid-column:1/3}}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0;align-items:center}
+.row label{font-size:14px;color:var(--muted)}
+.big{padding:14px 26px;font-size:17px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--cream);font-weight:700;transition:transform .15s}
+.big:hover{transform:translateY(-2px)}
+.big.primary{font-size:17px;padding:14px 28px;box-shadow:0 10px 30px rgba(216,180,106,.35)}
+.formMsg{min-height:1.4em;font-size:14px;color:#ffb4a3;margin:2px 0}
+.more{margin:14px auto 0;max-width:620px}
+.more summary{cursor:pointer;color:var(--gold2);font-size:14px;list-style:none;display:inline-block;padding:7px 16px;border:1px solid var(--line);border-radius:999px}
+.more summary::-webkit-details-marker{display:none}
+.lead{color:#dcd7e6;line-height:1.75;font-size:15px;margin:14px auto 16px}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:left;margin-bottom:14px}
+.how div{background:rgba(255,255,255,.045);border:1px solid rgba(216,180,106,.3);border-radius:12px;padding:12px}
+.how b{display:block;font-size:15px;margin-bottom:5px;color:var(--gold2)}
+.how span{font-size:13px;color:#d0cfdc;line-height:1.6}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;font-size:13px;color:#cfcbd8;margin-top:10px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px;border:1px solid rgba(255,255,255,.35)}
+.note{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.6}
+.linkBtn{background:none;border:none;color:#9aa0bd;font-size:13px;text-decoration:underline;padding:4px 8px}
+@media (max-aspect-ratio:1/1){#title .tArt{left:0;width:auto;bottom:auto;height:46vh}#title .tArt::after{background:linear-gradient(0deg,var(--navy) 0,rgba(29,34,58,0) 45%)}#title .tSide{top:auto;right:0;height:auto;max-height:100%;background:linear-gradient(0deg,var(--navy) 75%,rgba(29,34,58,0));padding-top:60px}.tInner{min-height:0}.how{grid-template-columns:1fr}}
+
+/* 계보도 크게 */
+#treeModal{position:fixed;inset:0;z-index:11;display:grid;place-items:center;background:rgba(8,10,22,.6);backdrop-filter:blur(3px);padding:16px}
+.tmBox{width:min(900px,96vw);max-height:92vh;overflow:auto;padding:18px 24px 16px}
+.tmHead{display:flex;justify-content:space-between;align-items:flex-start}
+.tmHead h2{margin:2px 0 0;font-size:clamp(24px,3.2vw,36px);font-weight:900}
+.closeBtn{background:none;border:1px solid var(--line);color:var(--cream);font-size:22px;width:40px;height:40px;border-radius:50%}
+#treeBig svg{width:100%;height:auto;max-height:62vh;display:block}
+.tmNote{font-size:12.5px;color:var(--muted);margin:10px 0 0;line-height:1.6}
+
+/* 엔딩 */
+#ending{background:var(--cloudA),var(--cloudB),radial-gradient(ellipse at 50% 0,#2a3156 0,var(--navy) 60%)}
+.eInner{max-width:1100px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 30px) 18px 60px}
+.eTop{text-align:center;display:flex;flex-direction:column;align-items:center}
+.eTop .portrait{width:118px;height:118px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#8d1d14,#3e0906);border:3px solid var(--gold);box-shadow:0 0 0 6px rgba(216,180,106,.2),0 12px 30px rgba(0,0,0,.5);margin-bottom:12px;overflow:hidden;display:grid;place-items:center;font-family:var(--serif);font-size:44px;color:var(--gold2)}
+.eTop .portrait img{width:100%;height:100%;object-fit:cover;object-position:center 12%}
+.rank{font-weight:900;font-size:clamp(32px,5vw,56px);margin:6px 0}
+.eTop p{color:#dcd7e6;margin:0}
+.saveMsg{margin-top:10px!important;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05)}
+.saveMsg.ok{color:#7fdca5}.saveMsg.fail{color:#ffa996}
+.stats{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:20px 0 22px}
+.stat{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:12px 18px;min-width:120px;text-align:center}
+.stat b{display:block;font-weight:900;font-size:30px;color:var(--gold2)}
+.stat span{font-size:12.5px;color:var(--muted)}
+.panel{padding:18px;margin-bottom:16px}
+.panel h3{margin:0 0 6px;font-size:20px;color:var(--gold2)}
+.panel .sub{font-size:13.5px;color:#cfcbd8;margin:0 0 8px;line-height:1.6}
+.panel svg{width:100%;height:auto;display:block}
+.cmp{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+@media(max-width:820px){.cmp{grid-template-columns:1fr}}
+.tblwrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:540px}
+th{font-weight:500;color:var(--muted);text-align:left;padding:6px;border-bottom:1px solid var(--line)}
+td{padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.07);vertical-align:top}
+td small{color:var(--muted)}
+tr.bad td{background:rgba(179,36,28,.16)}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;margin:1px 2px 1px 0}
+.codex{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.cx{display:flex;gap:8px;align-items:center;background:rgba(255,255,255,.045);border-radius:10px;padding:8px;font-size:12.5px;line-height:1.35}
+.cx i{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-family:var(--serif);font-weight:700;font-size:14px;border:1.5px solid var(--gold)}
+.cx b{display:block;font-family:var(--serif);color:var(--gold2)}
+.hint{margin-top:10px;padding:12px 14px;border-radius:12px;background:rgba(216,180,106,.1);border:1px dashed var(--gold);font-size:14px;line-height:1.65}
+
+/* 교사 화면 */
+#teacher{background:var(--cloudA),var(--cloudB),var(--navy)}
+.tcInner{max-width:1100px;margin:0 auto;padding:26px 18px 60px}
+.tcHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.tcHead h2{margin:0;font-size:28px;font-weight:900}
+.tcGrid{display:grid;grid-template-columns:300px 1fr;gap:16px;margin-top:16px}
+@media(max-width:860px){.tcGrid{grid-template-columns:1fr}}
+.codeBig{font-size:52px;font-weight:900;letter-spacing:.08em;text-align:center;margin:6px 0}
+.qr{display:grid;place-items:center;margin:8px 0}
+.qr canvas{border-radius:8px;max-width:100%}
+.linkTxt{font-size:12px;color:var(--muted);word-break:break-all;text-align:center}
+.roomList{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.roomList button{text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--cream);border-radius:10px;padding:8px 12px;font-size:14px}
+.roomList button small{color:var(--muted);margin-left:6px}
+.tcBtns{display:flex;gap:8px;flex-wrap:wrap}
+.st-done{color:#7fdca5;font-weight:700}.st-play{color:#ffe08a}
+.ver{position:fixed;right:8px;bottom:4px;font-size:10.5px;color:#7f849d;z-index:20;pointer-events:none}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(max-width:760px){
+ #hud{flex-wrap:wrap;gap:8px 12px;padding-bottom:10px}
+ #hud .ctrl{width:100%;margin-left:0;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto}
+ .chip{padding:5px 9px;font-size:12px;white-space:nowrap}
+ .who-me{display:none}
+ #event .head{top:calc(env(safe-area-inset-top,0px) + 112px)}
+ .evTitle{font-size:clamp(28px,8vw,40px)}
+ #scaleBox{top:calc(env(safe-area-inset-top,0px) + 112px);width:min(260px,72vw)}
+ #banner{top:calc(env(safe-area-inset-top,0px) + 250px)}
+ #king img,#king .kFallback{height:34vh}
+}
+
+.spdWrap{display:inline-flex;gap:6px}
+.spdLock{cursor:default;opacity:.85}
+.spdLock:hover{border-color:var(--line)}
+#king img.kOld{position:absolute;left:50%;bottom:0;transform:translateX(-50%);transition:opacity .45s}
+#king{min-width:10px}
+
+/* ===== 수장의 길 추가 ===== */
+#mini{left:auto;right:14px}
+.plaque.lord{background:linear-gradient(180deg,#24305e,#141a36);box-shadow:inset 0 0 0 2px #0c1028,inset 0 0 0 3px rgba(243,223,174,.35),0 6px 18px rgba(0,0,0,.5)}
+.plaque.lord b{display:flex;align-items:center;gap:6px}
+.plaque.lord b i{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid #fff3cf;box-shadow:0 0 8px rgba(255,240,200,.6)}
+.gauges{display:flex;gap:10px;align-items:center;pointer-events:auto}
+.g{display:flex;flex-direction:column;gap:3px;width:118px}
+.g span{font-size:11.5px;color:#d7cfb8;letter-spacing:.08em;display:flex;justify-content:space-between}
+.g i{position:relative;display:block;height:12px;border-radius:7px;background:rgba(255,255,255,.12);border:1px solid rgba(243,223,174,.45);overflow:hidden}
+.g u{position:absolute;left:0;top:0;bottom:0;width:50%;border-radius:6px;transition:width .9s cubic-bezier(.2,.9,.3,1.1),background .4s}
+.g.pow u{background:linear-gradient(90deg,#c9a24c,#f3dfae)}
+.g.trust u{background:linear-gradient(90deg,#a8322a,#ff8b6b)}
+.g.pub u{background:linear-gradient(90deg,#2f7d4f,#8fe0a8)}
+.g .band{position:absolute;left:45%;width:10%;top:-2px;bottom:-2px;background:rgba(127,220,165,.35);border-left:1.5px solid #7fdca5;border-right:1.5px solid #7fdca5;z-index:1}
+.g .danger{position:absolute;left:80%;right:0;top:0;bottom:0;background:repeating-linear-gradient(45deg,rgba(209,58,42,.45) 0 4px,rgba(209,58,42,.15) 4px 8px);z-index:1}
+.g u{z-index:0}
+.g span .v{font-style:normal;font-weight:900;font-size:13px;color:var(--gold2);letter-spacing:0}
+.g{position:relative}
+.g .num{position:absolute;right:0;top:-1px;font-size:12px;font-weight:900;color:var(--gold2)}
+.g.low i{border-color:#ff8b6b;animation:gWarn 1s infinite}
+.g.mono i{border-color:#ff8b6b;animation:gWarn .7s infinite}
+@keyframes gWarn{50%{box-shadow:0 0 12px rgba(255,90,70,.9)}}
+.g .dv,.sw .dv{position:absolute;right:-4px;top:-22px;font-weight:900;font-size:16px;pointer-events:none;animation:dvUp 1.6s forwards;text-shadow:0 2px 6px #000}
+.dv.p{color:#7fdca5}.dv.m{color:#ff8b6b}
+@keyframes dvUp{0%{opacity:0;transform:translateY(8px) scale(.6)}20%{opacity:1;transform:translateY(0) scale(1.25)}80%{opacity:1}100%{opacity:0;transform:translateY(-12px)}}
+.sw{position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:46px}
+.sw span{font-size:11.5px;color:#d7cfb8;letter-spacing:.08em}
+.sw b{font-size:17px;letter-spacing:-2px;min-height:22px}
+.sw b.none{font-size:12px;letter-spacing:0;color:#8a8ea8;font-weight:400}
+
+#leader{position:fixed;left:2vw;bottom:44px;z-index:1;pointer-events:none;text-align:center;transition:opacity .6s}
+#leader .lFig img{display:block;height:min(36vh,330px);width:auto;filter:drop-shadow(0 12px 30px rgba(0,0,0,.6))}
+#leader .lFig .kFallback{width:min(24vh,220px);height:min(36vh,330px)}
+#leader .lFig .kFallback svg{width:100%;height:100%;filter:drop-shadow(0 12px 30px rgba(0,0,0,.6))}
+#leader .lTag{display:inline-block;margin-top:-6px;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:700;color:var(--gold2);background:rgba(18,22,42,.85);border:1px solid var(--line);white-space:nowrap}
+#leader.swap .lFig{animation:lSwap 1.2s}
+@keyframes lSwap{0%{opacity:0;transform:translateY(30px) scale(.9)}100%{opacity:1;transform:none}}
+#king{left:56%}
+@media(max-width:760px){#leader .lFig img,#leader .lFig .kFallback{height:24vh}#leader .lTag{font-size:11px}}
+
+#event .head{width:min(860px,94vw)}
+.evPic{margin:8px auto 4px;max-width:min(520px,80vw)}
+.evPic img{display:block;width:100%;max-height:min(21vh,210px);object-fit:cover;border-radius:10px;border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.evPic .ico{font-size:clamp(44px,7vh,70px);line-height:1;filter:drop-shadow(0 6px 16px rgba(0,0,0,.6))}
+.evStage.fic{background:#8e88a8}
+.evStage.real{background:#d8b46a}
+.evTitle{font-size:clamp(30px,4.4vw,54px)}
+.evCtx b{color:#ffe08a}
+.bubble{top:var(--bt,46%)}
+.evBoth{top:var(--bt,46%)}
+.evBoth button{display:block;width:100%}
+.evBoth button .bw{display:block;font-size:13px;opacity:.75;margin-bottom:2px}
+.evBoth.solo{width:min(36vw,360px)}
+.bubble .per:empty{display:none}
+.bubble.off{display:none}
+@media(max-width:760px){.evPic img{max-height:16vh}}
+
+.rFx{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+.rFx span{font-size:13.5px;font-weight:900;padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.2)}
+.rFx .p{background:rgba(63,174,116,.22);color:#9ff0c0}
+.rFx .m{background:rgba(209,58,42,.25);color:#ffb4a3}
+.rFx .n{background:rgba(255,255,255,.08);color:#e6dfcb}
+.rCard.fic .rStamp{background:#6d6890}
+.rCard.real .rStamp{background:#b3241c}
+.rCard.luckOk .rStamp{background:#2f7d4f}
+.rCard.luckNo .rStamp{background:#4b2f73}
+.rCard .note2{font-size:13.5px;color:#ffe08a;background:rgba(216,180,106,.1);border:1px dashed var(--gold);border-radius:10px;padding:9px 12px}
+
+.keys{display:grid;gap:8px;text-align:left;background:linear-gradient(180deg,#fbf4e2,#efe2c2);color:var(--ink);border-radius:8px;padding:14px 16px;border-left:4px solid var(--red)}
+.keys div{display:flex;align-items:center;gap:8px;font-size:16px}
+.keys kbd{display:inline-grid;place-items:center;min-width:40px;height:36px;padding:0 8px;border-radius:7px;background:#fff;border:1px solid #b9a77f;box-shadow:0 3px 0 #b9a77f;font-family:var(--sans);font-weight:900;font-size:16px;color:#241a10}
+.keys span{margin-left:6px}
+.gHelp{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left}
+.gHelp div{background:linear-gradient(180deg,#fbf4e2,#efe2c2);color:var(--ink);border-radius:8px;padding:10px 12px;border-top:4px solid var(--gold3)}
+.gHelp b{display:block;font-size:18px;margin-bottom:3px}
+.gHelp span{font-size:14.5px;line-height:1.55}
+.gHelp em{font-style:normal;color:#b3241c;font-weight:700}
+@media(max-width:520px){.gHelp{grid-template-columns:1fr}}
+table.endT{min-width:0;font-size:15px;background:linear-gradient(180deg,#fbf4e2,#efe2c2);color:var(--ink);border-radius:8px;overflow:hidden}
+table.endT th{color:#5a4a2a;font-weight:700;padding:8px 10px;border-bottom:1px solid #c8b48a}
+table.endT td{padding:9px 10px;border-bottom:1px solid #d8c8a2;text-align:left;line-height:1.5}
+table.endT tr.e1 td:first-child{color:#8a5a00;font-weight:700}
+table.endT tr.e3 td:first-child{color:#b3241c;font-weight:700}
+table.endT tr.e4 td:first-child{color:#4b2f73;font-weight:700}
+
+#scaleBox.mono{border-color:#ff8b6b;animation:monoShake .5s infinite}
+@keyframes monoShake{0%,100%{transform:translateX(-50%)}25%{transform:translateX(calc(-50% - 2px))}75%{transform:translateX(calc(-50% + 2px))}}
+#scaleBox .sState.good{color:#7fdca5}
+
+/* 엔딩 평가 */
+.eTop .portrait.wide{width:min(420px,86vw);height:auto;aspect-ratio:1/1;border-radius:18px}
+.eTop .portrait.wide img{object-position:center}
+.endGrade{display:inline-block;margin-top:6px;padding:5px 16px;border-radius:999px;font-weight:900;font-size:15px;letter-spacing:.06em}
+.tone-gold .endGrade{background:var(--goldGrad);color:#2a1d08}
+.tone-silver .endGrade{background:linear-gradient(180deg,#f4f4f8,#b8bccb);color:#23263a}
+.tone-red .endGrade{background:linear-gradient(180deg,#ff8b6b,#8d1d14);color:#fff}
+.tone-dark .endGrade{background:#4b2f73;color:#fff}
+.evals{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:620px;margin:16px auto 6px}
+.eval{position:relative;padding:14px 12px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid var(--line);text-align:center}
+.eval span{font-size:13px;color:var(--muted);letter-spacing:.1em}
+.eval b{display:block;font-size:46px;line-height:1.1;font-weight:900}
+.eval small{display:block;font-size:13px;color:#dcd7e6;margin-top:2px}
+.eval.v-o b{color:#7fdca5}.eval.v-tri b{color:#ffe08a}.eval.v-dbl b{color:#f3dfae;text-shadow:0 0 16px rgba(255,220,140,.8)}.eval.v-x b{color:#ff6b55}.eval.v-dash b{color:#8a8ea8}
+.eval.stampIn{animation:stampIn .6s cubic-bezier(.2,.9,.3,1.4) both}
+@keyframes stampIn{0%{opacity:0;transform:scale(2.2) rotate(-12deg)}100%{opacity:1;transform:none}}
+.endText{max-width:720px;margin:14px auto 0;text-align:left;font-family:var(--serif);font-size:clamp(16px,1.9vw,19px);line-height:1.8;background:linear-gradient(180deg,#fbf4e2,#efe2c2);color:var(--ink);border-radius:10px;padding:16px 18px;border-left:5px solid var(--red)}
+.endText b{background:linear-gradient(transparent 58%,rgba(217,179,94,.55) 58%)}
+.endWhy{max-width:720px;margin:10px auto 0;font-size:14.5px;color:#ffe08a;line-height:1.65}
+.epi{max-width:760px;margin:18px auto 0;padding:16px;border-radius:14px;background:linear-gradient(180deg,rgba(80,20,16,.65),rgba(30,10,14,.8));border:1px solid #ff8b6b;text-align:center}
+.epi h3{margin:0 0 8px;color:#ffb4a3;font-size:22px}
+.epi img{display:block;width:100%;max-height:44vh;object-fit:cover;border-radius:10px;margin-bottom:10px}
+.epi p{margin:0;text-align:left;line-height:1.75;font-size:15.5px;color:#f4e2dc}
+.epi p b{color:#fff}
+.epi .bigX{display:inline-block;margin-top:10px;padding:6px 16px;border:3px double #ffd1c4;border-radius:8px;background:#b3241c;color:#fff;font-family:var(--serif);font-weight:700;transform:rotate(-4deg)}
+.endRecord td .fx{font-size:12px;color:var(--muted)}
+.btnEpi{margin-top:14px}
+@media(max-width:1180px){#hud{flex-wrap:wrap;row-gap:6px}#hud .ctrl{margin-left:0}}
+@media(max-width:760px){.g{width:84px}.gauges{gap:6px;flex-wrap:wrap}.plaque{padding:4px 10px}.evals{grid-template-columns:1fr 1fr}}
+
+#event.resolved .bubble,#event.resolved .evBoth,#event.resolved .evHint{visibility:hidden}
+.plaque.lord span{white-space:nowrap}
+.plaque span{white-space:nowrap}
+
+#event .head,#event .head{top:calc(var(--hudH,70px) + 2px)!important}
+#result{padding-top:calc(var(--hudH,70px) + 10px)}
+@media(max-height:760px){.evTitle{font-size:clamp(26px,3.6vw,40px);margin:4px 0}.evCtx{padding:7px 14px;font-size:14px}.evPic img{max-height:16vh}}
+</style></head><body>
+<div id="bgHall"></div>
+<div id="king" class="hidden" aria-hidden="true"></div>
+<div id="leader" class="hidden" aria-hidden="true"><div class="lFig" id="lFig"></div><div class="lTag" id="lTag"></div></div>
+<canvas id="cv" aria-label="붕당 세력도"></canvas>
+
+<div id="hud" class="hidden">
+  <div class="yr goldText"><span id="yr">1572</span><small>년</small></div>
+  <div class="plaque"><span id="kingNo">제14대 임금</span><b id="kingName">선조</b></div>
+  <div class="plaque lord" id="lordPlq"><span id="lordGen">1대 수장</span><b id="lordFac">사림</b></div>
+  <div class="gauges" id="gauges">
+    <div class="g pow" id="gPow"><span>세력<em class="v">40</em></span><i><em class="band"></em><em class="danger"></em><u></u></i></div>
+    <div class="g trust" id="gTrust"><span>신임<em class="v">50</em></span><i><u></u></i></div>
+    <div class="g pub" id="gPub"><span>공론<em class="v">50</em></span><i><u></u></i></div>
+    <div class="sw" id="gSw" title="서원: 위기 때 한 번 구해 줘요"><span>서원</span><b id="swN">🏫</b></div>
+  </div>
+  <div class="ctrl">
+    <span class="who-me" id="whoMe"></span>
+    <span class="spdWrap" id="hudSpd"><button class="chip spd on" data-s="1">1배</button>
+    <button class="chip spd" data-s="2">2배</button>
+    <button class="chip spd" data-s="4">4배</button></span><span class="chip spdLock hidden" id="spdLock" title="속도는 선생님이 정해요">속도 1배</span>
+    <button class="chip" id="pauseBtn">일시정지</button>
+    <button class="chip" id="miniBtn">계보도</button>
+    <button class="chip" id="muteBtn">소리 켬</button>
+    <button class="chip" id="fsBtn">전체화면</button>
+  </div>
+</div>
+
+<div id="scaleBox" class="hidden" aria-live="polite">
+  <div class="sTitle">조정의 저울</div>
+  <svg viewBox="-160 -18 320 96" aria-hidden="true">
+    <defs>
+      <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff8e2"/><stop offset=".45" stop-color="#d8b46a"/><stop offset="1" stop-color="#9d7330"/></linearGradient>
+    </defs>
+    <path d="M0 6 L-18 72 L18 72 Z" fill="url(#gGold)" stroke="#5a3a10" stroke-width="1.5"/>
+    <rect x="-34" y="70" width="68" height="7" rx="3" fill="url(#gGold)" stroke="#5a3a10"/>
+    <g id="beam" style="transform-origin:0px 6px">
+      <rect x="-124" y="2" width="248" height="8" rx="4" fill="url(#gGold)" stroke="#5a3a10" stroke-width="1.2"/>
+      <circle cx="0" cy="6" r="6" fill="#8d1d14" stroke="#f3dfae" stroke-width="1.5"/>
+      <g id="panL"><line x1="-120" y1="6" x2="-140" y2="36" stroke="#d8b46a" stroke-width="1.5"/><line x1="-120" y1="6" x2="-100" y2="36" stroke="#d8b46a" stroke-width="1.5"/>
+        <path id="panLfill" d="M-148 36 Q-120 56 -92 36 Z" fill="#8d1d14" stroke="#f3dfae" stroke-width="1.5"/><text x="-120" y="47" text-anchor="middle" font-size="11.5" font-weight="900" fill="#fff1dc">우리 붕당</text></g>
+      <g id="panR"><line x1="120" y1="6" x2="100" y2="36" stroke="#d8b46a" stroke-width="1.5"/><line x1="120" y1="6" x2="140" y2="36" stroke="#d8b46a" stroke-width="1.5"/>
+        <path d="M92 36 Q120 56 148 36 Z" fill="#2a3e74" stroke="#f3dfae" stroke-width="1.5"/><text x="120" y="47" text-anchor="middle" font-size="11.5" font-weight="900" fill="#fff1dc">다른 붕당</text></g>
+    </g>
+  </svg>
+  <div class="sState" id="sState">균형</div>
+</div>
+
+<div id="tl" class="hidden"><div class="track"><div id="tlFill"></div><div id="tlMarks"></div></div><div class="ends"><span>1575 동서 분당</span><span>1724 영조 즉위</span></div></div>
+<div id="mini" class="navyCard hidden" role="button" tabindex="0" title="눌러서 크게 보기"><p>붕당 계보 <span>🔍 크게 보기</span></p><div id="miniSvg"></div></div>
+<div id="treeModal" class="hidden"><div class="tmBox navyCard"><div class="tmHead"><div><span class="kicker">지금까지의</span><h2 class="goldText">붕당 계보도</h2></div><button class="closeBtn" id="treeClose" aria-label="닫기">×</button></div><div id="treeBig"></div><p class="tmNote">★ 표시가 우리 가문의 붕당입니다. 밝게 빛나는 붕당은 지금 조정에 있는 세력, 흐린 붕당은 힘을 잃었거나 아직 생기지 않은 세력입니다. <b>게임이 잠시 멈춰 있어요.</b></p></div></div>
+
+<div id="cards"></div>
+<div id="hist" class="navyCard" aria-live="polite"></div>
+<div id="vig"></div>
+<div id="pop"></div>
+<div id="banner"><div class="b1"></div><div class="b2"></div></div>
+<div id="pauseOv" class="hidden"><b class="goldText">일시정지</b></div>
+
+<div id="story" class="hidden"><div class="stBox navyCard" id="stBox"></div></div>
+
+<div id="event" class="hidden">
+  <div class="dim"></div>
+  <div class="head" id="evHead"><div><span class="evYear" id="evYear"></span><span class="evStage" id="evStage"></span></div><div class="evPic" id="evPic"></div><h2 class="evTitle" id="evTitle"></h2><p class="evCtx" id="evCtx"></p><div class="evHint" id="evHint"></div></div>
+  <div class="bubble L" id="bubL" role="button" tabindex="0"><div class="who"></div><div class="say"></div><div class="pick"></div></div>
+  <div class="bubble R" id="bubR" role="button" tabindex="0"><div class="who"></div><div class="say"></div><div class="pick"></div></div>
+  <div class="evBoth hidden" id="evBoth"><button id="bothBtn"></button><small id="bothSmall">가운데 버튼 또는 ↑ 키</small></div>
+</div>
+
+<div id="result" class="hidden"><div class="rCard navyCard" id="rCard"><div class="rStamp" id="rStamp"></div><div class="rTags" id="rTags"></div><h3 id="rTitle"></h3><p id="rMine"></p><div class="rFx" id="rFx"></div><p class="real" id="rReal"></p><p class="fix hidden" id="rFix"></p><div class="row" style="justify-content:flex-end;margin:12px 0 0"><button class="btn" id="rNext">다음 단계로 (Enter)</button></div></div></div>
+
+<!-- 첫 화면 -->
+<div id="title" class="screen">
+  <div class="tArt"><div class="tArtFb">家</div><img id="titleImg" alt=""></div>
+  <div class="tSide"><div class="tInner">
+    <div class="kicker">붕당 생존 시뮬레이션 · 1575 — 1724</div>
+    <h1 class="logo goldText">수장의 길</h1>
+    <p class="subtitle">대를 이어 조정에서 살아남아라!</p>
+    <div><span class="sparkle">✦ ✦ ✦</span></div>
+    <p class="tag1">우리 가문의 수장이 되어 동서 분당부터 영조 즉위까지,<br>견제와 균형을 지키며 가문을 이끌어 보세요.</p>
+    <div class="form">
+      <label class="room">방 코드<input id="inRoom" maxlength="8" autocomplete="off" placeholder="선생님이 알려 준 코드"></label>
+      <label>학번 (5자리)<input id="inSid" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="30101"></label>
+      <label>이름<input id="inName" maxlength="10" autocomplete="off" placeholder="이름"></label>
+    </div>
+    <p class="formMsg" id="formMsg"></p>
+    <div class="row"><button class="big primary" id="startBtn">수장 되기</button><button class="big" id="practiceBtn">연습하기 (저장 안 됨)</button></div>
+    <div class="row" id="practiceSpd"><label>연습하기 속도</label><button class="chip spd on" data-s="1">1배</button><button class="chip spd" data-s="2">2배</button><button class="chip spd" data-s="4">4배</button></div>
+    <details class="more"><summary>게임 방법 보기</summary>
+      <p class="lead">1575년부터 1724년까지 1년이 1초씩 흐릅니다. 큰 사건이 터지면 시간이 멈추고, 우리 가문의 수장으로서 어떻게 할지 고릅니다. 수장 자리는 아들과 손자에게 이어집니다.</p>
+      <div class="how">
+        <div><b>선택하기</b><span>← → 키나 마우스로 말풍선을 고르세요. 가운데 버튼(↑ 키)은 임금의 뜻을 따르는 선택이에요.</span></div>
+        <div><b>네 가지 힘</b><span>세력·신임·공론·서원을 지켜보세요. 세력은 너무 적어도, 너무 많아도 위험해요.</span></div>
+        <div><b>엔딩</b><span>1724년 영조가 즉위할 때 세력 45~55, 공론 60 이상이면 진 엔딩! 우리 편만 챙기면…?</span></div>
+      </div>
+    </details>
+    <p class="note">학습지 8-① 「견제와 균형의 저울, 한쪽으로 기울다」와 함께 하는 게임입니다. 가문 대물림과 작은 사건(가상 도장)은 게임 속 이야기입니다.</p>
+    <div><button class="linkBtn" id="teacherBtn">선생님 화면</button></div>
+  </div></div>
+</div>
+
+<div id="ending" class="screen hidden"><div class="eInner" id="eInner"></div></div>
+
+<div id="teacher" class="screen hidden"><div class="tcInner" id="tcInner"></div></div>
+
+<div id="toast"></div>
+<div class="ver" id="ver"></div>
+<script>
+/* QRCode for JavaScript — Copyright (c) 2009 Kazuhiko Arase, MIT License (via qrcode-terminal vendor) */
+var QRLIB=(function(){var M={};function require(p){return M[p.replace("./","")];}
+M["QRMode"]=(function(){var module={exports:{}};var exports=module.exports;
+module.exports = {
+    MODE_NUMBER :       1 << 0,
+    MODE_ALPHA_NUM :    1 << 1,
+    MODE_8BIT_BYTE :    1 << 2,
+    MODE_KANJI :        1 << 3
+};
+
+return module.exports;})();
+M["QRErrorCorrectLevel"]=(function(){var module={exports:{}};var exports=module.exports;
+module.exports = {
+	L : 1,
+	M : 0,
+	Q : 3,
+	H : 2
+};
+
+
+return module.exports;})();
+M["QRMaskPattern"]=(function(){var module={exports:{}};var exports=module.exports;
+module.exports = {
+	PATTERN000 : 0,
+	PATTERN001 : 1,
+	PATTERN010 : 2,
+	PATTERN011 : 3,
+	PATTERN100 : 4,
+	PATTERN101 : 5,
+	PATTERN110 : 6,
+	PATTERN111 : 7
+};
+
+return module.exports;})();
+M["QRMath"]=(function(){var module={exports:{}};var exports=module.exports;
+var QRMath = {
+
+	glog : function(n) {
+	
+		if (n < 1) {
+			throw new Error("glog(" + n + ")");
+		}
+		
+		return QRMath.LOG_TABLE[n];
+	},
+	
+	gexp : function(n) {
+	
+		while (n < 0) {
+			n += 255;
+		}
+	
+		while (n >= 256) {
+			n -= 255;
+		}
+	
+		return QRMath.EXP_TABLE[n];
+	},
+	
+	EXP_TABLE : new Array(256),
+	
+	LOG_TABLE : new Array(256)
+
+};
+	
+for (var i = 0; i < 8; i++) {
+	QRMath.EXP_TABLE[i] = 1 << i;
+}
+for (var i = 8; i < 256; i++) {
+	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+		^ QRMath.EXP_TABLE[i - 5]
+		^ QRMath.EXP_TABLE[i - 6]
+		^ QRMath.EXP_TABLE[i - 8];
+}
+for (var i = 0; i < 255; i++) {
+	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+}
+
+module.exports = QRMath;
+
+return module.exports;})();
+M["QRPolynomial"]=(function(){var module={exports:{}};var exports=module.exports;
+var QRMath = require('./QRMath');
+
+function QRPolynomial(num, shift) {
+	if (num.length === undefined) {
+		throw new Error(num.length + "/" + shift);
+	}
+
+	var offset = 0;
+
+	while (offset < num.length && num[offset] === 0) {
+		offset++;
+	}
+
+	this.num = new Array(num.length - offset + shift);
+	for (var i = 0; i < num.length - offset; i++) {
+		this.num[i] = num[i + offset];
+	}
+}
+
+QRPolynomial.prototype = {
+
+	get : function(index) {
+		return this.num[index];
+	},
+	
+	getLength : function() {
+		return this.num.length;
+	},
+	
+	multiply : function(e) {
+	
+		var num = new Array(this.getLength() + e.getLength() - 1);
+	
+		for (var i = 0; i < this.getLength(); i++) {
+			for (var j = 0; j < e.getLength(); j++) {
+				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+			}
+		}
+	
+		return new QRPolynomial(num, 0);
+	},
+	
+	mod : function(e) {
+	
+		if (this.getLength() - e.getLength() < 0) {
+			return this;
+		}
+	
+		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+	
+		var num = new Array(this.getLength() );
+		
+		for (var i = 0; i < this.getLength(); i++) {
+			num[i] = this.get(i);
+		}
+		
+		for (var x = 0; x < e.getLength(); x++) {
+			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+		}
+	
+		// recursive call
+		return new QRPolynomial(num, 0).mod(e);
+	}
+};
+
+module.exports = QRPolynomial;
+
+return module.exports;})();
+M["QRUtil"]=(function(){var module={exports:{}};var exports=module.exports;
+var QRMode = require('./QRMode');
+var QRPolynomial = require('./QRPolynomial');
+var QRMath = require('./QRMath');
+var QRMaskPattern = require('./QRMaskPattern');
+
+var QRUtil = {
+
+    PATTERN_POSITION_TABLE : [
+        [],
+        [6, 18],
+        [6, 22],
+        [6, 26],
+        [6, 30],
+        [6, 34],
+        [6, 22, 38],
+        [6, 24, 42],
+        [6, 26, 46],
+        [6, 28, 50],
+        [6, 30, 54],        
+        [6, 32, 58],
+        [6, 34, 62],
+        [6, 26, 46, 66],
+        [6, 26, 48, 70],
+        [6, 26, 50, 74],
+        [6, 30, 54, 78],
+        [6, 30, 56, 82],
+        [6, 30, 58, 86],
+        [6, 34, 62, 90],
+        [6, 28, 50, 72, 94],
+        [6, 26, 50, 74, 98],
+        [6, 30, 54, 78, 102],
+        [6, 28, 54, 80, 106],
+        [6, 32, 58, 84, 110],
+        [6, 30, 58, 86, 114],
+        [6, 34, 62, 90, 118],
+        [6, 26, 50, 74, 98, 122],
+        [6, 30, 54, 78, 102, 126],
+        [6, 26, 52, 78, 104, 130],
+        [6, 30, 56, 82, 108, 134],
+        [6, 34, 60, 86, 112, 138],
+        [6, 30, 58, 86, 114, 142],
+        [6, 34, 62, 90, 118, 146],
+        [6, 30, 54, 78, 102, 126, 150],
+        [6, 24, 50, 76, 102, 128, 154],
+        [6, 28, 54, 80, 106, 132, 158],
+        [6, 32, 58, 84, 110, 136, 162],
+        [6, 26, 54, 82, 110, 138, 166],
+        [6, 30, 58, 86, 114, 142, 170]
+    ],
+
+    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+
+    getBCHTypeInfo : function(data) {
+        var d = data << 10;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+        }
+        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+    },
+
+    getBCHTypeNumber : function(data) {
+        var d = data << 12;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+        }
+        return (data << 12) | d;
+    },
+
+    getBCHDigit : function(data) {
+
+        var digit = 0;
+
+        while (data !== 0) {
+            digit++;
+            data >>>= 1;
+        }
+
+        return digit;
+    },
+
+    getPatternPosition : function(typeNumber) {
+        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+    },
+
+    getMask : function(maskPattern, i, j) {
+        
+        switch (maskPattern) {
+            
+        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+
+        default :
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+    },
+
+    getErrorCorrectPolynomial : function(errorCorrectLength) {
+
+        var a = new QRPolynomial([1], 0);
+
+        for (var i = 0; i < errorCorrectLength; i++) {
+            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+        }
+
+        return a;
+    },
+
+    getLengthInBits : function(mode, type) {
+
+        if (1 <= type && type < 10) {
+
+            // 1 - 9
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 10;
+            case QRMode.MODE_ALPHA_NUM  : return 9;
+            case QRMode.MODE_8BIT_BYTE  : return 8;
+            case QRMode.MODE_KANJI      : return 8;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 27) {
+
+            // 10 - 26
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 12;
+            case QRMode.MODE_ALPHA_NUM  : return 11;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 10;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 41) {
+
+            // 27 - 40
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 14;
+            case QRMode.MODE_ALPHA_NUM  : return 13;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 12;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else {
+            throw new Error("type:" + type);
+        }
+    },
+
+    getLostPoint : function(qrCode) {
+        
+        var moduleCount = qrCode.getModuleCount();
+        var lostPoint = 0;
+        var row = 0; 
+        var col = 0;
+
+        
+        // LEVEL1
+        
+        for (row = 0; row < moduleCount; row++) {
+
+            for (col = 0; col < moduleCount; col++) {
+
+                var sameCount = 0;
+                var dark = qrCode.isDark(row, col);
+
+                for (var r = -1; r <= 1; r++) {
+
+                    if (row + r < 0 || moduleCount <= row + r) {
+                        continue;
+                    }
+
+                    for (var c = -1; c <= 1; c++) {
+
+                        if (col + c < 0 || moduleCount <= col + c) {
+                            continue;
+                        }
+
+                        if (r === 0 && c === 0) {
+                            continue;
+                        }
+
+                        if (dark === qrCode.isDark(row + r, col + c) ) {
+                            sameCount++;
+                        }
+                    }
+                }
+
+                if (sameCount > 5) {
+                    lostPoint += (3 + sameCount - 5);
+                }
+            }
+        }
+
+        // LEVEL2
+
+        for (row = 0; row < moduleCount - 1; row++) {
+            for (col = 0; col < moduleCount - 1; col++) {
+                var count = 0;
+                if (qrCode.isDark(row,     col    ) ) count++;
+                if (qrCode.isDark(row + 1, col    ) ) count++;
+                if (qrCode.isDark(row,     col + 1) ) count++;
+                if (qrCode.isDark(row + 1, col + 1) ) count++;
+                if (count === 0 || count === 4) {
+                    lostPoint += 3;
+                }
+            }
+        }
+
+        // LEVEL3
+
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount - 6; col++) {
+                if (qrCode.isDark(row, col) && 
+                        !qrCode.isDark(row, col + 1) && 
+                         qrCode.isDark(row, col + 2) && 
+                         qrCode.isDark(row, col + 3) && 
+                         qrCode.isDark(row, col + 4) && 
+                        !qrCode.isDark(row, col + 5) && 
+                         qrCode.isDark(row, col + 6) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount - 6; row++) {
+                if (qrCode.isDark(row, col) &&
+                        !qrCode.isDark(row + 1, col) &&
+                         qrCode.isDark(row + 2, col) &&
+                         qrCode.isDark(row + 3, col) &&
+                         qrCode.isDark(row + 4, col) &&
+                        !qrCode.isDark(row + 5, col) &&
+                         qrCode.isDark(row + 6, col) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        // LEVEL4
+        
+        var darkCount = 0;
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount; row++) {
+                if (qrCode.isDark(row, col) ) {
+                    darkCount++;
+                }
+            }
+        }
+        
+        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+        lostPoint += ratio * 10;
+
+        return lostPoint;       
+    }
+
+};
+
+module.exports = QRUtil;
+
+return module.exports;})();
+M["QR8bitByte"]=(function(){var module={exports:{}};var exports=module.exports;
+var QRMode = require('./QRMode');
+
+function QR8bitByte(data) {
+	this.mode = QRMode.MODE_8BIT_BYTE;
+	this.data = data;
+}
+
+QR8bitByte.prototype = {
+
+	getLength : function() {
+		return this.data.length;
+	},
+	
+	write : function(buffer) {
+		for (var i = 0; i < this.data.length; i++) {
+			// not JIS ...
+			buffer.put(this.data.charCodeAt(i), 8);
+		}
+	}
+};
+
+module.exports = QR8bitByte;
+
+return module.exports;})();
+M["QRRSBlock"]=(function(){var module={exports:{}};var exports=module.exports;
+var QRErrorCorrectLevel = require('./QRErrorCorrectLevel');
+
+function QRRSBlock(totalCount, dataCount) {
+	this.totalCount = totalCount;
+	this.dataCount  = dataCount;
+}
+
+QRRSBlock.RS_BLOCK_TABLE = [
+
+	// L
+	// M
+	// Q
+	// H
+
+	// 1
+	[1, 26, 19],
+	[1, 26, 16],
+	[1, 26, 13],
+	[1, 26, 9],
+	
+	// 2
+	[1, 44, 34],
+	[1, 44, 28],
+	[1, 44, 22],
+	[1, 44, 16],
+
+	// 3
+	[1, 70, 55],
+	[1, 70, 44],
+	[2, 35, 17],
+	[2, 35, 13],
+
+	// 4		
+	[1, 100, 80],
+	[2, 50, 32],
+	[2, 50, 24],
+	[4, 25, 9],
+	
+	// 5
+	[1, 134, 108],
+	[2, 67, 43],
+	[2, 33, 15, 2, 34, 16],
+	[2, 33, 11, 2, 34, 12],
+	
+	// 6
+	[2, 86, 68],
+	[4, 43, 27],
+	[4, 43, 19],
+	[4, 43, 15],
+	
+	// 7		
+	[2, 98, 78],
+	[4, 49, 31],
+	[2, 32, 14, 4, 33, 15],
+	[4, 39, 13, 1, 40, 14],
+	
+	// 8
+	[2, 121, 97],
+	[2, 60, 38, 2, 61, 39],
+	[4, 40, 18, 2, 41, 19],
+	[4, 40, 14, 2, 41, 15],
+	
+	// 9
+	[2, 146, 116],
+	[3, 58, 36, 2, 59, 37],
+	[4, 36, 16, 4, 37, 17],
+	[4, 36, 12, 4, 37, 13],
+	
+	// 10		
+	[2, 86, 68, 2, 87, 69],
+	[4, 69, 43, 1, 70, 44],
+	[6, 43, 19, 2, 44, 20],
+	[6, 43, 15, 2, 44, 16],
+
+	// 11
+	[4, 101, 81],
+	[1, 80, 50, 4, 81, 51],
+	[4, 50, 22, 4, 51, 23],
+	[3, 36, 12, 8, 37, 13],
+
+	// 12
+	[2, 116, 92, 2, 117, 93],
+	[6, 58, 36, 2, 59, 37],
+	[4, 46, 20, 6, 47, 21],
+	[7, 42, 14, 4, 43, 15],
+
+	// 13
+	[4, 133, 107],
+	[8, 59, 37, 1, 60, 38],
+	[8, 44, 20, 4, 45, 21],
+	[12, 33, 11, 4, 34, 12],
+
+	// 14
+	[3, 145, 115, 1, 146, 116],
+	[4, 64, 40, 5, 65, 41],
+	[11, 36, 16, 5, 37, 17],
+	[11, 36, 12, 5, 37, 13],
+
+	// 15
+	[5, 109, 87, 1, 110, 88],
+	[5, 65, 41, 5, 66, 42],
+	[5, 54, 24, 7, 55, 25],
+	[11, 36, 12],
+
+	// 16
+	[5, 122, 98, 1, 123, 99],
+	[7, 73, 45, 3, 74, 46],
+	[15, 43, 19, 2, 44, 20],
+	[3, 45, 15, 13, 46, 16],
+
+	// 17
+	[1, 135, 107, 5, 136, 108],
+	[10, 74, 46, 1, 75, 47],
+	[1, 50, 22, 15, 51, 23],
+	[2, 42, 14, 17, 43, 15],
+
+	// 18
+	[5, 150, 120, 1, 151, 121],
+	[9, 69, 43, 4, 70, 44],
+	[17, 50, 22, 1, 51, 23],
+	[2, 42, 14, 19, 43, 15],
+
+	// 19
+	[3, 141, 113, 4, 142, 114],
+	[3, 70, 44, 11, 71, 45],
+	[17, 47, 21, 4, 48, 22],
+	[9, 39, 13, 16, 40, 14],
+
+	// 20
+	[3, 135, 107, 5, 136, 108],
+	[3, 67, 41, 13, 68, 42],
+	[15, 54, 24, 5, 55, 25],
+	[15, 43, 15, 10, 44, 16],
+
+	// 21
+	[4, 144, 116, 4, 145, 117],
+	[17, 68, 42],
+	[17, 50, 22, 6, 51, 23],
+	[19, 46, 16, 6, 47, 17],
+
+	// 22
+	[2, 139, 111, 7, 140, 112],
+	[17, 74, 46],
+	[7, 54, 24, 16, 55, 25],
+	[34, 37, 13],
+
+	// 23
+	[4, 151, 121, 5, 152, 122],
+	[4, 75, 47, 14, 76, 48],
+	[11, 54, 24, 14, 55, 25],
+	[16, 45, 15, 14, 46, 16],
+
+	// 24
+	[6, 147, 117, 4, 148, 118],
+	[6, 73, 45, 14, 74, 46],
+	[11, 54, 24, 16, 55, 25],
+	[30, 46, 16, 2, 47, 17],
+
+	// 25
+	[8, 132, 106, 4, 133, 107],
+	[8, 75, 47, 13, 76, 48],
+	[7, 54, 24, 22, 55, 25],
+	[22, 45, 15, 13, 46, 16],
+
+	// 26
+	[10, 142, 114, 2, 143, 115],
+	[19, 74, 46, 4, 75, 47],
+	[28, 50, 22, 6, 51, 23],
+	[33, 46, 16, 4, 47, 17],
+
+	// 27
+	[8, 152, 122, 4, 153, 123],
+	[22, 73, 45, 3, 74, 46],
+	[8, 53, 23, 26, 54, 24],
+	[12, 45, 15, 28, 46, 16],
+
+	// 28
+	[3, 147, 117, 10, 148, 118],
+	[3, 73, 45, 23, 74, 46],
+	[4, 54, 24, 31, 55, 25],
+	[11, 45, 15, 31, 46, 16],
+
+	// 29
+	[7, 146, 116, 7, 147, 117],
+	[21, 73, 45, 7, 74, 46],
+	[1, 53, 23, 37, 54, 24],
+	[19, 45, 15, 26, 46, 16],
+
+	// 30
+	[5, 145, 115, 10, 146, 116],
+	[19, 75, 47, 10, 76, 48],
+	[15, 54, 24, 25, 55, 25],
+	[23, 45, 15, 25, 46, 16],
+
+	// 31
+	[13, 145, 115, 3, 146, 116],
+	[2, 74, 46, 29, 75, 47],
+	[42, 54, 24, 1, 55, 25],
+	[23, 45, 15, 28, 46, 16],
+
+	// 32
+	[17, 145, 115],
+	[10, 74, 46, 23, 75, 47],
+	[10, 54, 24, 35, 55, 25],
+	[19, 45, 15, 35, 46, 16],
+
+	// 33
+	[17, 145, 115, 1, 146, 116],
+	[14, 74, 46, 21, 75, 47],
+	[29, 54, 24, 19, 55, 25],
+	[11, 45, 15, 46, 46, 16],
+
+	// 34
+	[13, 145, 115, 6, 146, 116],
+	[14, 74, 46, 23, 75, 47],
+	[44, 54, 24, 7, 55, 25],
+	[59, 46, 16, 1, 47, 17],
+
+	// 35
+	[12, 151, 121, 7, 152, 122],
+	[12, 75, 47, 26, 76, 48],
+	[39, 54, 24, 14, 55, 25],
+	[22, 45, 15, 41, 46, 16],
+
+	// 36
+	[6, 151, 121, 14, 152, 122],
+	[6, 75, 47, 34, 76, 48],
+	[46, 54, 24, 10, 55, 25],
+	[2, 45, 15, 64, 46, 16],
+
+	// 37
+	[17, 152, 122, 4, 153, 123],
+	[29, 74, 46, 14, 75, 47],
+	[49, 54, 24, 10, 55, 25],
+	[24, 45, 15, 46, 46, 16],
+
+	// 38
+	[4, 152, 122, 18, 153, 123],
+	[13, 74, 46, 32, 75, 47],
+	[48, 54, 24, 14, 55, 25],
+	[42, 45, 15, 32, 46, 16],
+
+	// 39
+	[20, 147, 117, 4, 148, 118],
+	[40, 75, 47, 7, 76, 48],
+	[43, 54, 24, 22, 55, 25],
+	[10, 45, 15, 67, 46, 16],
+
+	// 40
+	[19, 148, 118, 6, 149, 119],
+	[18, 75, 47, 31, 76, 48],
+	[34, 54, 24, 34, 55, 25],
+	[20, 45, 15, 61, 46, 16]
+];
+
+QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+	
+	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+	
+	if (rsBlock === undefined) {
+		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+	}
+
+	var length = rsBlock.length / 3;
+	
+	var list = [];
+	
+	for (var i = 0; i < length; i++) {
+
+		var count = rsBlock[i * 3 + 0];
+		var totalCount = rsBlock[i * 3 + 1];
+		var dataCount  = rsBlock[i * 3 + 2];
+
+		for (var j = 0; j < count; j++) {
+			list.push(new QRRSBlock(totalCount, dataCount) );	
+		}
+	}
+	
+	return list;
+};
+
+QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+
+	switch(errorCorrectLevel) {
+	case QRErrorCorrectLevel.L :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+	case QRErrorCorrectLevel.M :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+	case QRErrorCorrectLevel.Q :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+	case QRErrorCorrectLevel.H :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+	default :
+		return undefined;
+	}
+};
+
+module.exports = QRRSBlock;
+
+return module.exports;})();
+M["QRBitBuffer"]=(function(){var module={exports:{}};var exports=module.exports;
+function QRBitBuffer() {
+	this.buffer = [];
+	this.length = 0;
+}
+
+QRBitBuffer.prototype = {
+
+	get : function(index) {
+		var bufIndex = Math.floor(index / 8);
+		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+	},
+	
+	put : function(num, length) {
+		for (var i = 0; i < length; i++) {
+			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+		}
+	},
+	
+	getLengthInBits : function() {
+		return this.length;
+	},
+	
+	putBit : function(bit) {
+	
+		var bufIndex = Math.floor(this.length / 8);
+		if (this.buffer.length <= bufIndex) {
+			this.buffer.push(0);
+		}
+	
+		if (bit) {
+			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+		}
+	
+		this.length++;
+	}
+};
+
+module.exports = QRBitBuffer;
+
+return module.exports;})();
+M["index"]=(function(){var module={exports:{}};var exports=module.exports;
+//---------------------------------------------------------------------
+// QRCode for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//   http://www.opensource.org/licenses/mit-license.php
+//
+// The word "QR Code" is registered trademark of 
+// DENSO WAVE INCORPORATED
+//   http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+// Modified to work in node for this project (and some refactoring)
+//---------------------------------------------------------------------
+
+var QR8bitByte = require('./QR8bitByte');
+var QRUtil = require('./QRUtil');
+var QRPolynomial = require('./QRPolynomial');
+var QRRSBlock = require('./QRRSBlock');
+var QRBitBuffer = require('./QRBitBuffer');
+
+function QRCode(typeNumber, errorCorrectLevel) {
+	this.typeNumber = typeNumber;
+	this.errorCorrectLevel = errorCorrectLevel;
+	this.modules = null;
+	this.moduleCount = 0;
+	this.dataCache = null;
+	this.dataList = [];
+}
+
+QRCode.prototype = {
+	
+	addData : function(data) {
+		var newData = new QR8bitByte(data);
+		this.dataList.push(newData);
+		this.dataCache = null;
+	},
+	
+	isDark : function(row, col) {
+		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+			throw new Error(row + "," + col);
+		}
+		return this.modules[row][col];
+	},
+
+	getModuleCount : function() {
+		return this.moduleCount;
+	},
+	
+	make : function() {
+		// Calculate automatically typeNumber if provided is < 1
+		if (this.typeNumber < 1 ){
+			var typeNumber = 1;
+			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+
+				var buffer = new QRBitBuffer();
+				var totalDataCount = 0;
+				for (var i = 0; i < rsBlocks.length; i++) {
+					totalDataCount += rsBlocks[i].dataCount;
+				}
+
+				for (var x = 0; x < this.dataList.length; x++) {
+					var data = this.dataList[x];
+					buffer.put(data.mode, 4);
+					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+					data.write(buffer);
+				}
+				if (buffer.getLengthInBits() <= totalDataCount * 8)
+					break;
+			}
+			this.typeNumber = typeNumber;
+		}
+		this.makeImpl(false, this.getBestMaskPattern() );
+	},
+	
+	makeImpl : function(test, maskPattern) {
+		
+		this.moduleCount = this.typeNumber * 4 + 17;
+		this.modules = new Array(this.moduleCount);
+		
+		for (var row = 0; row < this.moduleCount; row++) {
+			
+			this.modules[row] = new Array(this.moduleCount);
+			
+			for (var col = 0; col < this.moduleCount; col++) {
+				this.modules[row][col] = null;//(col + row) % 3;
+			}
+		}
+	
+		this.setupPositionProbePattern(0, 0);
+		this.setupPositionProbePattern(this.moduleCount - 7, 0);
+		this.setupPositionProbePattern(0, this.moduleCount - 7);
+		this.setupPositionAdjustPattern();
+		this.setupTimingPattern();
+		this.setupTypeInfo(test, maskPattern);
+		
+		if (this.typeNumber >= 7) {
+			this.setupTypeNumber(test);
+		}
+	
+		if (this.dataCache === null) {
+			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+		}
+	
+		this.mapData(this.dataCache, maskPattern);
+	},
+
+	setupPositionProbePattern : function(row, col)  {
+		
+		for (var r = -1; r <= 7; r++) {
+			
+			if (row + r <= -1 || this.moduleCount <= row + r) continue;
+			
+			for (var c = -1; c <= 7; c++) {
+				
+				if (col + c <= -1 || this.moduleCount <= col + c) continue;
+				
+				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+					this.modules[row + r][col + c] = true;
+				} else {
+					this.modules[row + r][col + c] = false;
+				}
+			}		
+		}		
+	},
+	
+	getBestMaskPattern : function() {
+	
+		var minLostPoint = 0;
+		var pattern = 0;
+	
+		for (var i = 0; i < 8; i++) {
+			
+			this.makeImpl(true, i);
+	
+			var lostPoint = QRUtil.getLostPoint(this);
+	
+			if (i === 0 || minLostPoint >  lostPoint) {
+				minLostPoint = lostPoint;
+				pattern = i;
+			}
+		}
+	
+		return pattern;
+	},
+	
+	createMovieClip : function(target_mc, instance_name, depth) {
+	
+		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+		var cs = 1;
+	
+		this.make();
+
+		for (var row = 0; row < this.modules.length; row++) {
+			
+			var y = row * cs;
+			
+			for (var col = 0; col < this.modules[row].length; col++) {
+	
+				var x = col * cs;
+				var dark = this.modules[row][col];
+			
+				if (dark) {
+					qr_mc.beginFill(0, 100);
+					qr_mc.moveTo(x, y);
+					qr_mc.lineTo(x + cs, y);
+					qr_mc.lineTo(x + cs, y + cs);
+					qr_mc.lineTo(x, y + cs);
+					qr_mc.endFill();
+				}
+			}
+		}
+		
+		return qr_mc;
+	},
+
+	setupTimingPattern : function() {
+		
+		for (var r = 8; r < this.moduleCount - 8; r++) {
+			if (this.modules[r][6] !== null) {
+				continue;
+			}
+			this.modules[r][6] = (r % 2 === 0);
+		}
+	
+		for (var c = 8; c < this.moduleCount - 8; c++) {
+			if (this.modules[6][c] !== null) {
+				continue;
+			}
+			this.modules[6][c] = (c % 2 === 0);
+		}
+	},
+	
+	setupPositionAdjustPattern : function() {
+	
+		var pos = QRUtil.getPatternPosition(this.typeNumber);
+		
+		for (var i = 0; i < pos.length; i++) {
+		
+			for (var j = 0; j < pos.length; j++) {
+			
+				var row = pos[i];
+				var col = pos[j];
+				
+				if (this.modules[row][col] !== null) {
+					continue;
+				}
+				
+				for (var r = -2; r <= 2; r++) {
+				
+					for (var c = -2; c <= 2; c++) {
+					
+						if (Math.abs(r) === 2 || 
+                            Math.abs(c) === 2 ||
+                            (r === 0 && c === 0) ) {
+							this.modules[row + r][col + c] = true;
+						} else {
+							this.modules[row + r][col + c] = false;
+						}
+					}
+				}
+			}
+		}
+	},
+	
+	setupTypeNumber : function(test) {
+	
+		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+        var mod;
+	
+		for (var i = 0; i < 18; i++) {
+			mod = (!test && ( (bits >> i) & 1) === 1);
+			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+		}
+	
+		for (var x = 0; x < 18; x++) {
+			mod = (!test && ( (bits >> x) & 1) === 1);
+			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+		}
+	},
+	
+	setupTypeInfo : function(test, maskPattern) {
+	
+		var data = (this.errorCorrectLevel << 3) | maskPattern;
+		var bits = QRUtil.getBCHTypeInfo(data);
+        var mod;
+	
+		// vertical		
+		for (var v = 0; v < 15; v++) {
+	
+			mod = (!test && ( (bits >> v) & 1) === 1);
+	
+			if (v < 6) {
+				this.modules[v][8] = mod;
+			} else if (v < 8) {
+				this.modules[v + 1][8] = mod;
+			} else {
+				this.modules[this.moduleCount - 15 + v][8] = mod;
+			}
+		}
+	
+		// horizontal
+		for (var h = 0; h < 15; h++) {
+	
+			mod = (!test && ( (bits >> h) & 1) === 1);
+			
+			if (h < 8) {
+				this.modules[8][this.moduleCount - h - 1] = mod;
+			} else if (h < 9) {
+				this.modules[8][15 - h - 1 + 1] = mod;
+			} else {
+				this.modules[8][15 - h - 1] = mod;
+			}
+		}
+	
+		// fixed module
+		this.modules[this.moduleCount - 8][8] = (!test);
+	
+	},
+	
+	mapData : function(data, maskPattern) {
+		
+		var inc = -1;
+		var row = this.moduleCount - 1;
+		var bitIndex = 7;
+		var byteIndex = 0;
+		
+		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+	
+			if (col === 6) col--;
+	
+			while (true) {
+	
+				for (var c = 0; c < 2; c++) {
+					
+					if (this.modules[row][col - c] === null) {
+						
+						var dark = false;
+	
+						if (byteIndex < data.length) {
+							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+						}
+	
+						var mask = QRUtil.getMask(maskPattern, row, col - c);
+	
+						if (mask) {
+							dark = !dark;
+						}
+						
+						this.modules[row][col - c] = dark;
+						bitIndex--;
+	
+						if (bitIndex === -1) {
+							byteIndex++;
+							bitIndex = 7;
+						}
+					}
+				}
+								
+				row += inc;
+	
+				if (row < 0 || this.moduleCount <= row) {
+					row -= inc;
+					inc = -inc;
+					break;
+				}
+			}
+		}
+		
+	}
+
+};
+
+QRCode.PAD0 = 0xEC;
+QRCode.PAD1 = 0x11;
+
+QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+	
+	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+	
+	var buffer = new QRBitBuffer();
+	
+	for (var i = 0; i < dataList.length; i++) {
+		var data = dataList[i];
+		buffer.put(data.mode, 4);
+		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+		data.write(buffer);
+	}
+
+	// calc num max data.
+	var totalDataCount = 0;
+	for (var x = 0; x < rsBlocks.length; x++) {
+		totalDataCount += rsBlocks[x].dataCount;
+	}
+
+	if (buffer.getLengthInBits() > totalDataCount * 8) {
+		throw new Error("code length overflow. (" + 
+            buffer.getLengthInBits() + 
+            ">" +  
+            totalDataCount * 8 + 
+            ")");
+	}
+
+	// end code
+	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+		buffer.put(0, 4);
+	}
+
+	// padding
+	while (buffer.getLengthInBits() % 8 !== 0) {
+		buffer.putBit(false);
+	}
+
+	// padding
+	while (true) {
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD0, 8);
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD1, 8);
+	}
+
+	return QRCode.createBytes(buffer, rsBlocks);
+};
+
+QRCode.createBytes = function(buffer, rsBlocks) {
+
+	var offset = 0;
+	
+	var maxDcCount = 0;
+	var maxEcCount = 0;
+	
+	var dcdata = new Array(rsBlocks.length);
+	var ecdata = new Array(rsBlocks.length);
+	
+	for (var r = 0; r < rsBlocks.length; r++) {
+
+		var dcCount = rsBlocks[r].dataCount;
+		var ecCount = rsBlocks[r].totalCount - dcCount;
+
+		maxDcCount = Math.max(maxDcCount, dcCount);
+		maxEcCount = Math.max(maxEcCount, ecCount);
+		
+		dcdata[r] = new Array(dcCount);
+		
+		for (var i = 0; i < dcdata[r].length; i++) {
+			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+		}
+		offset += dcCount;
+		
+		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+		var modPoly = rawPoly.mod(rsPoly);
+		ecdata[r] = new Array(rsPoly.getLength() - 1);
+		for (var x = 0; x < ecdata[r].length; x++) {
+            var modIndex = x + modPoly.getLength() - ecdata[r].length;
+			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+		}
+
+	}
+	
+	var totalCodeCount = 0;
+	for (var y = 0; y < rsBlocks.length; y++) {
+		totalCodeCount += rsBlocks[y].totalCount;
+	}
+
+	var data = new Array(totalCodeCount);
+	var index = 0;
+
+	for (var z = 0; z < maxDcCount; z++) {
+		for (var s = 0; s < rsBlocks.length; s++) {
+			if (z < dcdata[s].length) {
+				data[index++] = dcdata[s][z];
+			}
+		}
+	}
+
+	for (var xx = 0; xx < maxEcCount; xx++) {
+		for (var t = 0; t < rsBlocks.length; t++) {
+			if (xx < ecdata[t].length) {
+				data[index++] = ecdata[t][xx];
+			}
+		}
+	}
+
+	return data;
+
+};
+
+module.exports = QRCode;
+
+return module.exports;})();
+return {QRCode:M["index"],ECL:M["QRErrorCorrectLevel"]};})();
+function drawQR(el, text, px){ el.innerHTML = ""; try{ var q = new QRLIB.QRCode(-1, QRLIB.ECL.M); q.addData(text); q.make(); var n = q.getModuleCount(), m = 4, cell = Math.max(2, Math.floor(px / (n + m*2))), size = cell * (n + m*2); var c = document.createElement("canvas"); c.width = c.height = size; var g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0,0,size,size); g.fillStyle = "#000"; for(var r=0;r<n;r++) for(var k=0;k<n;k++) if(q.isDark(r,k)) g.fillRect((k+m)*cell,(r+m)*cell,cell,cell); el.appendChild(c); }catch(e){ el.textContent = "QR을 그리지 못했어요"; } }
+</script>
+<script>
+/* ============ 「수장의 길」 게임 데이터 ============
+   우리 가문의 수장이 되어 1575년 동서 분당부터 1724년 영조 즉위까지 대를 이어 살아남는 게임.
+   사실 확인: 교과서(중등역사Ⅱ 138~143쪽), 한국민족문화대백과(기축옥사·노론·경신환국·기사환국), 「기울어진 저울」 데이터.
+   가상 설정: 가문 대물림, 무작위 사건(가상 도장), 수치. */
+const START = 1572, END = 1724.9;
+const VERSION = '판 2026-10-22 ①';
+
+const FACTIONS = {
+  sarim : {name:'사림', short:'사림', color:'#4fae74', parent:null,     tree:[150,26]},
+  seoin : {name:'서인', short:'서인', color:'#ece6d6', parent:'sarim',  tree:[95,80]},
+  dongin: {name:'동인', short:'동인', color:'#3f86e0', parent:'sarim',  tree:[205,80]},
+  namin : {name:'남인', short:'남인', color:'#e0503f', parent:'dongin', tree:[180,134]},
+  bugin : {name:'북인', short:'북인', color:'#3d4157', parent:'dongin', tree:[232,134]},
+  noron : {name:'노론', short:'노론', color:'#f2d98c', parent:'seoin',  tree:[68,134]},
+  soron : {name:'소론', short:'소론', color:'#9fb6d6', parent:'seoin',  tree:[122,134]},
+};
+
+const KINGS = [
+  {n:'선조',  no:14, y:1567,    img:'king_seonjo'},
+  {n:'광해군',no:15, y:1608.05, img:'king_gwanghae'},
+  {n:'인조',  no:16, y:1623.25, img:'king_injo'},
+  {n:'효종',  no:17, y:1649.4,  img:'king_hyojong'},
+  {n:'현종',  no:18, y:1659.4,  img:'king_hyeonjong'},
+  {n:'숙종',  no:19, y:1674.6,  img:'king_sukjong'},
+  {n:'숙종',  no:19, y:1716.0,  img:'king_sukjong_late', alt:'king_sukjong', same:true},
+  {n:'경종',  no:20, y:1720.5,  img:'king_gyeongjong'},
+  {n:'영조',  no:21, y:1724.6,  img:'king_yeongjo'},
+];
+
+/* 가문 대물림(가상): 이 해에 아들·손자가 수장 자리를 잇는다(수장이 12년 안 된 때는 건너뜀) */
+const GEN_YEARS = [1607.6, 1648.8, 1673.8, 1709.5];
+const GEN_MAX_IMG = 5;   // leader_1 ~ leader_5
+
+/* 시작 값·규칙 */
+const RULE = {
+  start:{pow:40, trust:50, pub:50, seowon:1, grudge:0},
+  win :{L:{pow:10, pub:-10, grudge:2}, R:{half:1, pub:10}, B:{trust:10, grudge:1}},
+  lose:{L:{trust:-10, pub:5}, R:{half:1, pub:5}, B:{trust:10, pub:-10}},
+  grudgeHit:2,          // 질 때 세력 피해 += 원한 × 2
+  sayakPer:.08, sayakMax:.6,
+  genCut:-5, sayakCut:-10,
+  rescue:10,            // 서원으로 되살릴 때 값
+  monoAt:85, monoTimes:3, monoPub:-10,
+  bandA:45, bandB:55, truePub:60, badAt:80,
+};
+
+/* 이야기 카드 */
+const STORY = {
+  tut: [
+    {k:'게임 안내 1/4', t:'○○ 가문의 수장', img:'title',
+     c:'1575년, 조선의 선비(사림)들이 **동인**과 **서인**으로 나뉘었다. 당신은 **○○ 가문의 수장**이다.<br>아들과 손자에게 수장 자리를 물려주며 **1724년, 영조가 왕이 될 때까지** 가문을 지켜라!'},
+    {k:'게임 안내 2/4', t:'이렇게 조작해요',
+     html:'<div class="keys"><div><kbd>←</kbd><kbd>→</kbd><span>왼쪽·오른쪽 선택지 고르기</span></div><div><kbd>↑</kbd><span>가운데 선택지(임금의 뜻 따르기) 고르기</span></div><div><kbd>Enter</kbd><span>다음으로 넘어가기</span></div><div><kbd>Space</kbd><span>잠깐 멈추기</span></div><div><kbd>🖱</kbd><span>마우스로 눌러도 돼요</span></div></div>',
+     tip:'큰 사건(실록 도장)은 실제 역사, 작은 사건(가상 도장)은 게임 속 이야기입니다.'},
+    {k:'게임 안내 3/4', t:'네 가지 힘',
+     html:'<div class="gHelp"><div><b>세력</b><span>조정에서 우리 붕당이 차지한 자리. <em>너무 적어도, 너무 많아도 위험!</em> 45~55가 균형이에요.</span></div><div><b>신임</b><span>임금의 믿음. 임금이 바뀌면 50으로 돌아가요.</span></div><div><b>공론</b><span>선비들의 지지. 바른 선택을 하면 올라가요.</span></div><div><b>서원</b><span>세력·신임·공론 중 하나가 0이 될 때 한 번 구해 줘요.</span></div></div>',
+     tip:'상대를 너무 몰아붙이면 보이지 않는 「원한」이 쌓여요. 원한은 대를 이어 돌아옵니다.'},
+    {k:'게임 안내 4/4', t:'엔딩 조건',
+     html:'<table class="endT"><tr><th>엔딩</th><th>조건 (1724년 영조 즉위 때)</th></tr>'
+      + '<tr class="e1"><td>진 엔딩<br><b>탕평의 조정, 명재상</b></td><td>세력 45~55 + 공론 60 이상</td></tr>'
+      + '<tr class="e2"><td>보통 엔딩</td><td>살아남았지만 균형을 갖추지 못함 (4가지)</td></tr>'
+      + '<tr class="e3"><td>나쁜 엔딩<br><b>견제 세력이 사라진 조정</b></td><td>세력 80 이상</td></tr>'
+      + '<tr class="e4"><td>패배 엔딩</td><td>게임 중 세력 0 → <b>몰락</b> · 신임 0 → <b>파직</b> · 공론 0 → <b>사림의 배신자</b></td></tr></table>',
+     tip:'준비되었으면 Enter! 시간이 흐르기 시작합니다.'},
+  ],
+};
+
+/* ============ 실제 사건 (실록 도장) ============
+   base: 붕당별 세력 기본 변화 (+ 얻는 쪽 / − 잃는 쪽 / 'fall' 몰락 / 없음·0 = 지켜봄)
+   lines[붕당] = {L, R, B} 말풍선 (L 강경 · R 온건 · B 임금의 뜻 따르기)
+   split: 이 사건에서 갈라짐 {from, L:{to, d}, R:{to, d}} — 그 붕당 수장은 갈라질 쪽을 고름
+   custom[붕당] = {L:{say,d}, R:{say,d}} 특별 선택지 */
+const EVENTS = [
+ {id:'dongseo', y:1575.2, title:'동인과 서인의 탄생', era:'선조 8년', img:'st_bungdang',
+  ctx:'관리를 추천하는 중요한 자리인 「이조 전랑」을 두고 젊은 선비 **김효원**과 선배 선비 **심의겸**이 맞섰다. 선비들이 두 편으로 나뉜다. 우리 가문은 누구 편에 설까?',
+  split:{from:'sarim', L:{to:'dongin', who:'동인', per:'김효원을 따른다', say:'젊은 선비 **김효원**을 따르겠소! **깨끗한 정치**를 하려면 외척을 멀리해야 하오!', d:{}},
+                       R:{to:'seoin', who:'서인', per:'심의겸을 따른다', say:'선배 선비 **심의겸**을 따르겠소! 오랫동안 **조정을 지켜 온** 분들이오!', d:{}}},
+  real:'김효원의 집이 동쪽, 심의겸의 집이 서쪽에 있어 김효원 쪽을 **동인**, 심의겸 쪽을 **서인**이라 불렀다. 사림이 이렇게 두 붕당으로 나뉘었다.'},
+
+ {id:'gichuk', y:1589.8, title:'기축옥사', era:'선조 22년', img:'ev_gichuk',
+  ctx:'"동인 **정여립**이 반란을 꾀했다"는 고발이 들어왔다. 임금은 서인 **정철**에게 조사를 맡겼다.',
+  base:{seoin:15, dongin:-20},
+  lines:{
+   seoin :{L:'이 기회에 **동인 놈들을 모조리** 쓸어버리자!', R:'**반란에 가담한 자만** 벌하자. 죄 없는 선비는 놓아주어야 하오.', B:'**전하의 뜻대로** 엄히 다스리겠사옵니다.'},
+   dongin:{L:'이것은 **서인의 모함**이옵니다!', R:'**억울한 선비**까지 잡아들이지 마소서.', B:'조사에 **힘껏 돕겠사옵니다.**'}},
+  real:'정철이 조사를 맡았고, 정여립과 가깝거나 동인이라는 이유로 **1,000여 명**이 처형된 것으로 전한다. 동인은 큰 피해를 입고 서인을 깊이 원망하게 되었다.'},
+
+ {id:'geonjeo', y:1591.3, title:'건저의 사건', era:'선조 24년', img:'ev_geonjeo',
+  ctx:'서인 **정철**이 광해군을 세자로 세우자고 했다가 임금의 큰 노여움을 샀다. 정철은 귀양을 갔다.',
+  base:{dongin:15, seoin:-20},
+  lines:{
+   seoin:{L:'세자를 세우자는 것이 **무슨 죄**이옵니까!', R:'**때를 잘못 고른** 잘못은 인정하옵니다.', B:'**전하의 뜻**을 따르겠사옵니다.'}},
+  split:{from:'dongin', ask:'정철을 얼마나 벌할까? 동인이 둘로 나뉜다!',
+    L:{to:'bugin', who:'북인', per:'강경파', say:'정철과 서인을 **엄하게 벌해야** 하오!', d:{pow:5, grudge:1}},
+    R:{to:'namin', who:'남인', per:'온건파', say:'**지나친 벌**은 또 다른 원한을 낳소.', d:{pub:5}}},
+  real:'정철을 얼마나 벌할지를 두고 동인이 강경한 **북인**과 온건한 **남인**으로 나뉘었다.'},
+
+ {id:'bukin', y:1608.3, title:'광해군 즉위, 북인의 시대', era:'광해군 즉위년', img:'ev_bukin',
+  ctx:'광해군이 왕이 되었다. 임진왜란 때 의병장으로 활약하고 광해군을 도운 **북인**이 조정을 이끌게 되었다.',
+  base:{bugin:20, namin:-10, seoin:-10},
+  lines:{
+   bugin:{L:'다른 붕당은 **조정에서 몰아내자!**', R:'**남인·서인도** 함께 일하게 하자.', B:'**전하의 개혁**을 힘껏 돕겠사옵니다.'},
+   namin:{L:'북인이 **조정을 독차지**하고 있소!', R:'자리를 지키며 **때를 기다리겠소.**', B:'**새 임금**을 받들겠사옵니다.'},
+   seoin:{L:'북인이 **조정을 독차지**하고 있소!', R:'자리를 지키며 **때를 기다리겠소.**', B:'**새 임금**을 받들겠사옵니다.'}},
+  real:'북인이 정권을 잡았다. 광해군은 처음에는 여러 붕당을 쓰려 했지만, 북인의 힘이 커지면서 남인과 서인은 **점점 힘을 잃었다.**'},
+
+ {id:'banjeong', y:1623.3, title:'인조반정', era:'광해군 15년', img:'ev_banjeong',
+  ctx:'광해군은 동생 영창대군을 죽게 하고 인목대비를 가두었다. 1623년, **서인**이 군사를 일으켜 광해군을 몰아내고 **인조**를 왕으로 세웠다.',
+  base:{seoin:25, namin:10, bugin:'fall'},
+  lines:{
+   seoin:{L:'북인은 **한 명도 남기지 말라!**', R:'**남인과 함께** 조정을 꾸리자.', B:'**새 임금**을 모시겠사옵니다.'},
+   namin:{L:'우리도 공이 있소! **자리를 더 주시오.**', R:'**서인과 힘을 모아** 나라를 바로 세우겠소.', B:'**새 임금의 뜻**을 따르겠사옵니다.'},
+   bugin:{L:'끝까지 **광해군 전하를 지키겠다!**', R:'**목숨만은** 살려 주시오.'}},
+  real:'**북인은 몰락했다.** 서인은 남인 **이원익**을 영의정으로 세워 남인과 함께 조정을 이끌었다(주제 6 참고).'},
+
+ {id:'byeongja', y:1636.95, title:'병자호란, 남한산성의 논쟁', era:'인조 14년', img:'ev_hwaju',
+  ctx:'청의 군대가 쳐들어왔다. 임금은 **남한산성**으로 피했다. 성 안에서 **화친(전쟁 멈추기)**과 **척화(끝까지 싸우기)**를 두고 다툼이 벌어졌다.',
+  custom:{'*':{L:{who:'척화', per:'끝까지 싸우자', say:'**오랑캐에게 무릎 꿇을 수 없사옵니다!** 끝까지 싸워야 하옵니다!', d:{pub:10, trust:-10}},
+               R:{who:'주화', per:'화친하자', say:'**백성을 살리려면** 화친해야 하옵니다!', d:{trust:10, pub:-10}}}},
+  real:'**최명길**은 화친을, **김상헌**은 끝까지 싸우자고 주장했다. 인조는 결국 **삼전도**에서 청에 항복했다(주제 6 참고).'},
+
+ {id:'gihae', y:1659.55, title:'기해예송', era:'현종 즉위년', img:'ev_yesong',
+  ctx:'효종이 세상을 떠났다. 효종의 새어머니 **자의대비**는 상복을 몇 년 입어야 할까? 효종은 인조의 첫째가 아니라 **둘째 아들**이었다.',
+  base:{seoin:15, namin:-15}, yesong:true,
+  lines:{
+   seoin:{L:'남인의 주장은 **예법을 어지럽히는 것**이오!', R:'**1년**이 예법에 맞사옵니다. 차분히 따져 보소서.', B:'**전하께서** 정해 주소서.'},
+   namin:{L:'효종은 **왕이시오!** 3년이 마땅하오!', R:'**예법을 두고** 차분히 토론합시다.', B:'**전하께서** 정해 주소서.'}},
+  real:'**서인의 1년설**이 받아들여졌다. 예법 논쟁이 왕실의 **정통성**을 따지는 정치 싸움으로 번지기 시작했다.'},
+
+ {id:'gabin', y:1674.3, title:'갑인예송', era:'현종 15년', img:'ev_yesong',
+  ctx:'이번에는 효종의 왕비가 세상을 떠났다. 자의대비의 상복을 두고 다시 다툼이 일어났다. 서인은 **9개월**, 남인은 **1년**을 주장했다.',
+  base:{namin:20, seoin:-20}, yesong:true,
+  lines:{
+   seoin:{L:'남인은 **예법을 모르는 무리**요!', R:'**9개월**이 예법에 맞사옵니다. 차분히 따져 보소서.', B:'**전하께서** 정해 주소서.'},
+   namin:{L:'왕비이셨으니 **1년**! 서인은 **왕실을 업신여기오!**', R:'**예법을 두고** 차분히 토론합시다.', B:'**전하께서** 정해 주소서.'}},
+  real:'**남인의 1년설**이 받아들여져 서인이 물러나고 **남인이 조정을 이끌었다.**'},
+
+ {id:'gyeongsin', y:1680.3, title:'경신환국', era:'숙종 6년', img:'st_hwanguk',
+  ctx:'남인 영의정 **허적**이 궁궐의 **유악(기름 먹인 천막)**을 허락 없이 가져다 썼다. 곧이어 허적의 아들이 역모를 꾸몄다는 고발까지 들어왔다. 임금이 크게 화가 났다.',
+  base:{seoin:25, namin:-30}, sayak:['namin'],
+  lines:{
+   seoin:{L:'**남인을 모조리** 몰아내야 하옵니다!', R:'**죄지은 사람만** 벌하소서.', B:'**전하의 뜻대로** 하소서.'},
+   namin:{L:'**작은 실수**일 뿐이옵니다! 역모는 모함이옵니다!', R:'잘못은 인정하고 **용서를 비옵니다.**', B:'**전하의 처분**을 따르겠사옵니다.'}},
+  real:'남인이 **하루아침에** 쫓겨나고 **허적·윤휴**가 사약을 받았다. 서인이 다시 조정을 차지했다. 왕이 권력을 잡은 붕당을 한꺼번에 바꾼 **환국**이다.'},
+
+ {id:'noso', y:1683.2, title:'서인, 노론과 소론으로', era:'숙종 9년', img:'ev_noso',
+  ctx:'쫓겨난 남인을 **얼마나 벌할지**를 두고 서인 안에서 다툼이 벌어졌다.',
+  base:{namin:5}, neutralMsg:{namin:'서인이 갈라져 남인에게 **숨 쉴 틈**이 생겼다. (세력 +5)'},
+  split:{from:'seoin', ask:'남인을 얼마나 벌할까? 서인이 둘로 나뉜다!',
+    L:{to:'noron', who:'노론', per:'송시열을 따른다', say:'남인은 **엄하게 벌해야** 하오!', d:{pow:5, grudge:1}},
+    R:{to:'soron', who:'소론', per:'윤증을 따른다', say:'**지나친 벌**은 안 되오.', d:{pub:5}}},
+  real:'서인이 남인을 엄하게 벌하자는 **노론(송시열)**과 너그럽게 하자는 **소론(윤증)**으로 나뉘었다.'},
+
+ {id:'gisa', y:1689.1, title:'기사환국', era:'숙종 15년', img:'st_prince',
+  ctx:'숙종이 희빈 장씨가 낳은 아기 왕자를 **원자(다음 왕이 될 맏아들)**로 정하려 했다. 서인(노론·소론)이 반대하고 나섰다.',
+  base:{namin:25, noron:-30, soron:-30}, sayak:['noron','soron'],
+  lines:{
+   noron:{L:'**너무 이르옵니다!** 왕비마마께서 아드님을 낳으실 수도 있사옵니다!', R:'**때를 조금 늦추소서.**', B:'**전하의 뜻**을 따르겠사옵니다.'},
+   soron:{L:'**너무 이르옵니다!** 왕비마마께서 아드님을 낳으실 수도 있사옵니다!', R:'**때를 조금 늦추소서.**', B:'**전하의 뜻**을 따르겠사옵니다.'},
+   namin:{L:'반대한 **서인을 모두 쫓아내야** 하옵니다!', R:'조용히 **원자 책봉을 돕겠사옵니다.**', B:'**전하의 뜻이 옳사옵니다!**'}},
+  real:'서인이 쫓겨나고 **송시열**이 사약을 받았다. **인현왕후**도 왕비 자리에서 쫓겨나고 남인이 다시 조정을 차지했다.'},
+
+ {id:'gapsul', y:1694.3, title:'갑술환국', era:'숙종 20년', img:'st_restore',
+  ctx:'숙종이 쫓겨난 **인현왕후**를 다시 그리워했다. 서인은 인현왕후를 되돌리려 했고, 남인은 이를 역모로 몰았다.',
+  base:{noron:25, soron:25, namin:-30},
+  lines:{
+   noron:{L:'**남인을 이번에 뿌리 뽑읍시다!**', R:'**왕비마마만** 제자리로 모시면 되옵니다.', B:'**전하의 뜻대로** 하소서.'},
+   soron:{L:'**남인을 이번에 뿌리 뽑읍시다!**', R:'**왕비마마만** 제자리로 모시면 되옵니다.', B:'**전하의 뜻대로** 하소서.'},
+   namin:{L:'이것은 **서인의 음모**이옵니다!', R:'잘못이 있다면 **벌을 받겠사옵니다.**', B:'**전하의 처분**을 따르겠사옵니다.'}},
+  real:'숙종은 오히려 남인을 쫓아냈다. 인현왕후가 다시 왕비가 되었고, 남인은 **오랫동안 다시 일어서지 못했다.**'},
+
+ {id:'succession', y:1716.2, title:'다음 왕은 누구?', era:'숙종 42년 무렵', img:'st_succession',
+  ctx:'숙종이 늙고 병들었다. **소론**은 세자(훗날 경종)를, **노론**은 연잉군(훗날 영조)을 지지하며 맞섰다.',
+  custom:{
+   noron:{L:{who:'앞장서기', per:'연잉군 지지', say:'**연잉군**이 다음 왕이 되셔야 하오!', d:{pow:5, grudge:2, trust:-5}}, R:{who:'한발 물러서기', per:'', say:'왕위는 **전하께서 정하실 일**이오.', d:{pub:5}}},
+   soron:{L:{who:'앞장서기', per:'세자 지지', say:'**세자 자리를 흔드는 자는 역적**이오!', d:{pow:5, grudge:2}}, R:{who:'한발 물러서기', per:'', say:'왕위는 **전하께서 정하실 일**이오.', d:{pub:5}}},
+   namin:{L:{who:'편 서기', per:'', say:'우리도 **한쪽 편에 서자!**', d:{pow:3, grudge:1}}, R:{who:'지켜보기', per:'', say:'지켜보며 **힘을 기르자.**', d:{pub:5}}}},
+  real:'숙종 말, **왕위 계승**을 두고 노론과 소론이 치열하게 다투었다.'},
+
+ {id:'gyeongjong', y:1720.75, title:'경종 즉위, 소론의 시대', era:'경종 즉위년', img:'ev_gyeongjong',
+  ctx:'숙종이 세상을 떠나고 **경종**이 왕이 되었다. 경종을 지지하던 **소론**이 힘을 얻었다.',
+  base:{soron:20, noron:-30}, sayak:['noron'], neutralMsg:{namin:'노론과 소론의 다툼을 **멀리서 지켜보았다.**'},
+  lines:{
+   soron:{L:'노론은 **역적**이오! **모두 벌하소서!**', R:'벌은 **꼭 필요한 만큼만** 합시다.', B:'**전하의 뜻대로** 하소서.'},
+   noron:{L:'우리는 **나라를 걱정했을 뿐**이오!', R:'**몸을 낮추고** 때를 기다리겠소.', B:'**전하의 처분**을 따르겠사옵니다.'}},
+  real:'경종을 지지하던 소론이 힘을 얻어 **노론을 역모로 몰아 죽이고 쫓아냈다.**'},
+
+ {id:'yeongjo', y:1724.7, title:'영조 즉위', era:'1724년', img:'ev_yeongjo', final:true,
+  ctx:'경종이 세상을 떠나고 연잉군이 왕(**영조**)이 되었다. 새 임금은 붕당 싸움을 끝내고 싶어 했다. 영조는 우리 가문을 어떻게 볼까?',
+  real:'영조는 붕당의 대립을 누그러뜨리려고 **탕평책**을 펼쳤다(교과서 140쪽).'},
+];
+
+/* ============ 무작위 사건 (가상 도장) — 한 판에 RAND_N장 ============
+   L·R: {who, say, d(효과)} · luck: {p, ok:{}, no:{}} 운에 맡김 · era [시작, 끝] · fac: 이 붕당일 때만 · cost: 서원 필요 */
+const RAND_N = [12, 16];
+const RAND = [
+ {id:'jeollang', n:'이조 전랑 자리가 비었다', ic:'📜', c:'관리를 추천하는 이조 전랑 자리가 비었다. 누구를 추천할까?',
+  L:{who:'우리 편 챙기기', say:'**우리 붕당 선비**를 앉히자!', d:{pow:8, pub:-3}},
+  R:{who:'고루 나누기',   say:'실력 있는 **다른 붕당 선비**를 추천하자.', d:{pub:8, pow:-3, grudge:-1}}},
+ {id:'mistake', n:'상대 붕당의 실수', ic:'⚠', c:'다른 붕당의 관리가 나랏일에서 실수를 했다.',
+  L:{who:'크게 공격하기', say:'**역적으로 몰아** 쫓아내자!', d:{pow:8, pub:-5, grudge:2}},
+  R:{who:'바르게 비판하기', say:'**잘못한 만큼만** 비판하자.', d:{pub:5, pow:3}}},
+ {id:'ourfault', n:'우리 편의 잘못', ic:'💰', c:'우리 붕당 관리가 뇌물을 받았다는 소문이 돈다.',
+  L:{who:'감싸기', say:'**모른 척** 감싸 주자.', d:{pow:3, pub:-8}},
+  R:{who:'책임지기', say:'**스스로 물러나게** 하자.', d:{pub:8, pow:-5}}},
+ {id:'famine', n:'흉년이 들었다', ic:'🌾', c:'흉년이 들어 백성들이 굶주리고 있다.',
+  L:{who:'백성 먼저', say:'**백성을 먼저 구하자**고 상소하자.', d:{pub:8, trust:3}},
+  R:{who:'조정 일 먼저', say:'지금은 **조정 일**에 힘쓰자.', d:{pow:5, pub:-5}}},
+ {id:'seowon', n:'서원을 세우자는 청', ic:'🏫', c:'고향 선비들이 우리 가문의 스승을 모시는 서원을 세우자고 한다.',
+  L:{who:'세우기', say:'**서원을 세우자!** 선비들이 모일 것이오.', d:{seowon:1, pub:3, trust:-3}},
+  R:{who:'미루기', say:'임금께서 서원이 느는 것을 싫어하시오. **아직은 이르오.**', d:{trust:3}}},
+ {id:'debate', n:'다른 붕당 학자와의 토론', ic:'🗣', c:'다른 붕당의 이름난 학자와 학문 토론을 하게 되었다.',
+  L:{who:'이기기', say:'**상대를 깎아내려서라도** 이기자.', d:{pow:3, pub:-3, grudge:1}},
+  R:{who:'배우기', say:'**서로의 생각을 배우자.**', d:{pub:6, grudge:-1}}},
+ {id:'gwageo', n:'과거 시험', ic:'🖌', c:'과거 시험이 열린다. 우리 가문 선비들이 시험을 본다.',
+  L:{who:'서원에서 돕기', say:'**서원에서** 시험 준비를 크게 돕자. (서원 1개 사용)', cost:1, luck:{p:.8, ok:{pow:10}, no:{}}},
+  R:{who:'운에 맡기기', say:'**실력대로** 붙기를 바라자.', luck:{p:.4, ok:{pow:8}, no:{}}}},
+ {id:'feast', n:'임금의 잦은 잔치', ic:'🏮', c:'임금이 잔치를 자주 열어 나라 살림이 어려워졌다.',
+  L:{who:'바른말 하기', say:'임금께 **바른말**을 올리자.', d:{trust:-8, pub:8}},
+  R:{who:'모른 척하기', say:'괜히 **노여움을 살 필요는 없소.**', d:{trust:5, pub:-5}}},
+ {id:'dokdae', n:'임금의 은밀한 부름', ic:'🌙', c:'임금이 수장을 밤에 몰래 불렀다. 다른 붕당 몰래 단둘이 만나자고 한다.',
+  L:{who:'몰래 만나기', say:'**단둘이** 뵙겠사옵니다.', d:{trust:10, pub:-5}},
+  R:{who:'공개하기', say:'**모두가 보는 자리**에서 말씀드리겠사옵니다.', d:{pub:5}}},
+ {id:'samsa', n:'3사 자리 나누기', ic:'⚖', c:'임금과 관리의 잘못을 비판하는 **3사**(사헌부·사간원·홍문관)에 자리가 여럿 났다.', noMono:true,
+  L:{who:'우리 편으로', say:'**모두 우리 편**으로 채우자!', d:{pow:8, pub:-5, grudge:1}},
+  R:{who:'고루 맡기기', say:'**여러 붕당이 고루** 맡아야 바른 비판이 살아나오.', d:{pub:6}}},
+ {id:'suryeong', n:'백성을 괴롭히는 수령', ic:'📮', c:'우리 붕당 출신 수령이 백성을 괴롭힌다는 고발이 들어왔다.',
+  L:{who:'덮어 두기', say:'우리 편이니 **덮어 두자.**', d:{pow:3, pub:-8}},
+  R:{who:'벌하기', say:'우리 편이라도 **벌해야** 하오.', d:{pub:8, pow:-3}}},
+ {id:'marriage', n:'혼인 제안', ic:'💍', c:'다른 붕당 집안에서 우리 가문과 혼인을 맺자고 청했다.',
+  L:{who:'받아들이기', say:'**혼인을 맺어** 서로의 원한을 풀자.', d:{grudge:-2, pow:-3}},
+  R:{who:'거절하기', say:'다른 붕당과는 **어울릴 수 없소.**', d:{pow:3, grudge:1}}},
+ {id:'elder', n:'원로의 은퇴', ic:'🧓', c:'우리 붕당의 원로가 벼슬에서 물러나며 뒤를 이을 사람을 추천해 달라고 한다.',
+  L:{who:'제자 앉히기', say:'**원로의 제자**를 앉히자.', d:{pow:5}},
+  R:{who:'고루 뽑기', say:'**새 인물을 고루** 뽑자.', d:{pub:5}}},
+ {id:'sangso', n:'젊은 선비들의 상소', ic:'✍', c:'우리 붕당의 젊은 선비들이 다른 붕당을 비난하는 상소를 올리자고 한다.',
+  L:{who:'함께 올리기', say:'**함께 올리자!** 저들을 꺾어야 하오.', d:{pow:5, grudge:2, trust:-3}},
+  R:{who:'말리기', say:'**싸움만 키울 뿐**이오. 말리자.', d:{pub:3, grudge:-1}}},
+ {id:'rumor', n:'역모 헛소문', ic:'👂', c:'우리 가문이 역모를 꾸민다는 헛소문이 돌고 있다.',
+  L:{who:'찾아서 벌하기', say:'**소문 낸 자**를 찾아 벌하자!', d:{pow:3, grudge:1}},
+  R:{who:'결백 밝히기', say:'**차분히 결백**을 밝히자.', luck:{p:.7, ok:{trust:5}, no:{trust:-5}}}},
+ {id:'daedong', n:'대동법을 넓히자는 논의', ic:'🍚', c:'특산물 대신 쌀로 세금을 내는 **대동법**을 더 넓히자는 논의가 일어났다(주제 7 참고).', era:[1609, 1707],
+  L:{who:'반대', say:'**지주들이 싫어하니** 반대하자.', d:{pow:5, pub:-5}},
+  R:{who:'찬성', say:'**백성을 위해** 찬성하자.', d:{pub:8, trust:3}}},
+ {id:'bukbeol', n:'북벌 논의', ic:'🏹', c:'효종이 청을 치자는 **북벌**을 준비하고 있다.', era:[1649.5, 1659.3],
+  L:{who:'돕기', say:'**북벌을 돕자!** 치욕을 갚아야 하오.', d:{trust:10, pub:-3}},
+  R:{who:'신중하기', say:'**백성의 부담**이 크니 신중해야 하오.', d:{pub:5, trust:-5}}},
+];
+/* 인물 영입(가상 장면 · 인물 설명은 사실). 붕당·시기가 맞을 때만 나옴 */
+const PERSONS = [
+ {id:'jih', n:'정인홍', fac:['bugin'], era:[1592, 1622], c:'의병장으로 활약한 **북인의 큰 스승 정인홍**이 우리 가문을 돕겠다고 한다.', d:{pow:10}, fx:'세력 +10'},
+ {id:'lwi', n:'이원익', fac:['namin'], era:[1608.5, 1633], c:'붕당을 가리지 않고 나랏일을 한 **남인 재상 이원익**이 우리 가문을 돕겠다고 한다.', d:{pub:5}, perk:'halfGrudge', fx:'공론 +5 · 이번 판 원한이 절반만 쌓임'},
+ {id:'kys', n:'김육', fac:['seoin'], era:[1630, 1657], c:'**대동법을 넓힌 서인 관리 김육**이 우리 가문을 돕겠다고 한다.', d:{pub:10}, fx:'공론 +10'},
+ {id:'hmk', n:'허목', fac:['namin'], era:[1656, 1681], c:'예송에서 남인의 논리를 세운 **학자 허목**이 우리 가문을 돕겠다고 한다.', d:{}, perk:'yesongHalf', fx:'예송 사건 피해 절반'},
+ {id:'ssy', n:'송시열', fac:['seoin','noron'], era:[1650, 1688], c:'**서인의 큰 스승 송시열**이 우리 가문을 돕겠다고 한다. 다만 그는 상대 붕당에 매우 엄격하다.', d:{pub:10}, perk:'extraGrudge', fx:'공론 +10 · 강경하게 고를 때 원한 +1 더'},
+ {id:'yj',  n:'윤증', fac:['soron'], era:[1683.5, 1713], c:'**소론의 스승 윤증**이 우리 가문을 돕겠다고 한다.', d:{pub:8}, fx:'공론 +8'},
+];
+
+/* 그 시절 조선(가운데 짧은 소식, 힘 변화 없음) */
+const HIST = [
+ [1592.3,'1592','war','임진왜란','일본이 조선을 침략했다(주제 5 참고). 전쟁은 7년 동안 이어졌다.'],
+ [1608.7,'1608','culture','대동법','경기도부터 특산물 대신 쌀로 세금을 내는 대동법이 시작되었다(주제 7 참고).'],
+ [1670.5,'1670~1671','life','경신 대기근','가뭄과 홍수, 전염병이 겹쳐 수많은 백성이 굶주렸다.'],
+ [1678.2,'1678','culture','상평통보','숙종 때 상평통보가 널리 쓰이기 시작했다.'],
+ [1708.5,'1708','culture','대동법 완성','대동법이 거의 전국에서 시행되었다(주제 7 참고).'],
+];
+
+/* 붕당 생김·사라짐 (사건과 따로 일어나는 것) */
+const STRUCT = [
+ {y:1572.05, k:'story', s:'tut'},
+ {y:1623.32, k:'fade', ids:['bugin'], label:'북인, 힘을 잃다'},
+];
+
+/* ============ 엔딩 ============
+   fam: 가문의 평가 · hist: 역사의 평가 (○ △ ◎ ✕ —) */
+const ENDINGS = {
+  true :{grade:'진 엔딩', name:'탕평의 조정, 명재상', img:'end_true', fam:'○', hist:'○', tone:'gold',
+         text:'새 임금 영조는 어느 한쪽에 치우치지 않은 **○○ 가문의 수장**을 불렀다. 수장은 **탕평파**가 되어 영조의 탕평 정치를 도왔다. 사람들은 그를 **명재상**이라 불렀다.',
+         why:'세력을 45~55로 지키고 선비들의 지지(공론)도 얻었습니다. 견제와 균형을 지킨 가문만이 탕평의 시대에 쓰였어요.'},
+  n1   :{grade:'보통 엔딩', name:'조정의 한 귀퉁이에서', img:'end_normal1', fam:'△', hist:'○', tone:'silver',
+         text:'**힘이 약해 조정의 한쪽으로 밀려났다.** 가문은 살아남았지만, 높은 벼슬은 언제나 다른 가문의 차지였다.',
+         why:'세력이 30보다 낮았어요. 너무 약하면 균형을 이루는 한 축이 될 수 없어요.'},
+  n2   :{grade:'보통 엔딩', name:'다음 대를 기약하며', img:'end_normal2', fam:'△', hist:'○', tone:'silver',
+         text:'**균형에 거의 닿았지만 힘이 조금 모자랐다.** 영조는 이 가문을 눈여겨보았지만, 아직 높은 벼슬을 맡기지는 않았다. 수장은 다음 대에 희망을 걸었다.',
+         why:'세력이 30~44였어요. 조금만 더 힘을 길렀다면 탕평의 조정에 설 수 있었어요.'},
+  n3   :{grade:'보통 엔딩', name:'살아남은 가문, 닫힌 출셋길', img:'end_normal3', fam:'△', hist:'○', tone:'silver',
+         text:'**한쪽으로 치우쳐 탕평에 쓰이지 못했다.** 붕당 싸움에 앞장섰던 가문을 영조는 멀리했다.',
+         why:'세력이 56~79였어요. 우리 편만 챙기면 탕평을 바라는 임금에게 쓰이기 어려워요.'},
+  n4   :{grade:'보통 엔딩', name:'이름 없이 이어진 가문', img:'end_normal4', fam:'△', hist:'○', tone:'silver',
+         text:'**힘의 균형은 맞췄지만 사림의 믿음을 얻지 못했다.** 가문은 이어졌지만 역사에 이름을 남기지 못했다.',
+         why:'세력은 균형이었지만 공론이 60보다 낮았어요. 선비들의 지지 없이는 명재상이 될 수 없어요.'},
+  bad  :{grade:'나쁜 엔딩', name:'견제 세력이 사라진 조정', img:'end_bad', fam:'◎', hist:'✕', tone:'red',
+         text:'우리 붕당이 조정을 **거의 다 차지했다.** 가문은 최고의 권력을 누렸다. 그런데… 이제 우리를 **비판하고 견제할 세력이 없다.**',
+         epi:{img:'end_epilogue', t:'100여 년 뒤', c:'정조가 세상을 떠난 뒤, 조정은 **몇몇 가문이 권력을 독차지하는 세도 정치**로 이어졌다. 비판하고 견제할 세력이 없자 **부정과 비리**가 늘고, 백성의 삶은 어려워졌다(교과서 142쪽).'},
+         why:'세력이 80 이상이었어요. 겉으로는 가문의 성공이지만, 견제 세력이 사라진 조정은 나라에 가장 나쁜 결과를 남겼어요.'},
+  fall :{grade:'패배 엔딩', name:'몰락', img:'end_fall', fam:'✕', hist:'—', tone:'dark',
+         text:'우리 붕당이 조정에서 **모두 쫓겨났다.** 가문은 먼 곳으로 유배되었다.',
+         why:'세력이 0이 되었어요.'},
+  fallBugin:{grade:'패배 엔딩', name:'몰락', img:'end_fall', fam:'✕', hist:'—', tone:'dark',
+         text:'**인조반정으로 북인은 몰락했다.** 북인의 큰 스승 정인홍과 이이첨 등은 처형되고, 가문은 먼 곳으로 유배되었다. 이것은 **실제 역사**에서 북인이 맞은 운명이다.',
+         why:'북인을 고르면 인조반정에서 실제 역사처럼 몰락해요. 다른 길도 찾아보세요!'},
+  dismiss:{grade:'패배 엔딩', name:'파직', img:'end_dismissed', fam:'✕', hist:'—', tone:'dark',
+         text:'임금의 믿음을 **완전히 잃었다.** 수장은 벼슬에서 쫓겨났다.',
+         why:'신임이 0이 되었어요.'},
+  traitor:{grade:'패배 엔딩', name:'사림의 배신자', img:'end_traitor', fam:'✕', hist:'—', tone:'dark',
+         text:'선비들이 모두 **등을 돌렸다.** 가문에는 **‘사림의 배신자’**라는 이름만 남았다.',
+         why:'공론이 0이 되었어요.'},
+};
+const END_SCORE = {true:5, n2:4, n4:4, n3:3, n1:3, bad:2, fall:1, fallBugin:1, dismiss:1, traitor:1};
+'use strict';
+/* ============ 도구 ============ */
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const lerp = (a,b,t) => a + (b-a)*t;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/&lt;br&gt;/g, '<br>');
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const rnd = (a,b) => a + Math.random()*(b - a);
+function hexRgb(h){ h = h.replace('#',''); return [0,2,4].map(i => parseInt(h.slice(i,i+2),16)); }
+function lum(h){ const c = hexRgb(h); return (c[0]*.299 + c[1]*.587 + c[2]*.114)/255; }
+function mix(h,t){ const a = hexRgb(h); return 'rgb(' + a.map(v => Math.round(v*(1-t))).join(',') + ')'; }
+let toastT = null;
+function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms || 3800); }
+const ls = { get(k,d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } }, set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
+const nowStr = t => { const d = new Date(t); const p = n => String(n).padStart(2,'0'); return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()); };
+const STAT_NAME = {pow:'세력', trust:'신임', pub:'공론', seowon:'서원'};
+
+/* 선생님이 만든 그림 불러오기: img/이름.(jpg|png|webp…) → 없으면 저장소 맨 위 → 없으면 숨김 */
+const IMG_EXTS = ['png','jpg','webp','jpeg','PNG','JPG','WEBP','JPEG'];
+const IMG_PROM = {}; let IMG_PREF = null;
+function findImg(name){
+  if(!name) return Promise.resolve(null);
+  if(IMG_PROM[name]) return IMG_PROM[name];
+  const dirs = IMG_PREF === '' ? ['', 'img/'] : ['img/', ''];
+  const tries = []; dirs.forEach(d => IMG_EXTS.forEach(e => tries.push(d + name + '.' + e)));
+  IMG_PROM[name] = new Promise(res => { let i = 0; const im = new Image();
+    im.onload = () => { const u = tries[i]; if(IMG_PREF == null) IMG_PREF = u.startsWith('img/') ? 'img/' : ''; res(u); };
+    im.onerror = () => { i++; if(i < tries.length) im.src = tries[i]; else res(null); };
+    im.src = tries[0]; });
+  return IMG_PROM[name];
+}
+function loadImg(img, name, onFail){
+  img.classList.add('hidden');
+  findImg(name).then(u => {
+    if(!u){ if(onFail) onFail(); return; }
+    img.addEventListener('load', () => { img.classList.remove('hidden'); if(img.id === 'titleImg'){ const fb = document.querySelector('.tArtFb'); if(fb) fb.remove(); } }, {once:true});
+    img.src = u; });
+}
+
+/* ============ 소리 ============ */
+let AC = null, muted = false;
+function tone(freqs, dur, type, vol, gap){ if(!AC || muted) return; const t0 = AC.currentTime;
+  freqs.forEach((f,i) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.value = f; const st = t0 + (gap||0)*i;
+    g.gain.setValueAtTime(0.0001, st); g.gain.exponentialRampToValueAtTime(vol || .12, st + .02); g.gain.exponentialRampToValueAtTime(0.0001, st + dur);
+    o.connect(g); g.connect(AC.destination); o.start(st); o.stop(st + dur + .05); }); }
+const sGong = () => tone([98,147,196], 2.2, 'sine', .2);
+const sGood = () => tone([523,659,784,1046], .5, 'triangle', .1, .09);
+const sBad  = () => tone([220,185,147], .55, 'sawtooth', .05, .14);
+const sKing = () => tone([392,494,587], .9, 'triangle', .07, .07);
+const sSplit= () => tone([330,440], .6, 'sine', .08, .12);
+const sPage = () => tone([440,554], .25, 'sine', .05, .06);
+const sTick = () => tone([660], .12, 'square', .03);
+
+/* ============ 캔버스 ============ */
+const cv = $('#cv'), ctx = cv.getContext('2d');
+let W = 800, H = 600, DPR = 1;
+function resize(){ DPR = Math.min(2, window.devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR); ctx.setTransform(DPR,0,0,DPR,0,0); placeTop(); }
+function placeTop(){ const hud = $('#hud'); if(!hud || hud.classList.contains('hidden')) return; const h = hud.offsetHeight; document.documentElement.style.setProperty('--hudH', h + 'px');
+  if(!document.body.classList.contains('evOn')) $('#scaleBox').style.top = (h + 2) + 'px'; else $('#scaleBox').style.top = '';
+  $('#banner').style.top = (h + 150) + 'px'; }
+addEventListener('resize', resize); resize();
+
+/* ============ 게임 상태 ============ */
+let S = null, speedPref = 1, miniOn = true, PLAYER = null;
+function newState(){
+  const fam = ((PLAYER ? PLAYER.name : ($('#inName').value || '')).trim()[0]) || '김';
+  return {gen:Math.random(), year:START, tIdx:0, tl:[], mode:'play', paused:false, speed:speedPref,
+    fac:'sarim', st:{...RULE.start}, lord:1, lordStart:START, fam, perks:new Set(), usedRand:new Set(), usedPers:new Set(),
+    records:[], powHist:[{y:START, v:RULE.start.pow}], orbs:{}, op:{}, tree:{sarim:'alive'}, monoCount:0, mono:false, sayaks:0, rescues:0,
+    kingIdx:-1, cur:null, armedAt:0, histQ:[], histBusy:false, particles:[], floats:[], rings:[], flash:0, shake:0, beamA:0,
+    typers:[], saved:false, endKey:null, pend:null};
+}
+const famName = () => S.fam + '씨';
+const FN = id => FACTIONS[id].name;
+
+/* 이번 판의 연표: 실제 사건 + 대물림 + 소식 + 무작위 사건(판마다 다름) */
+function buildTL(){
+  const tl = [];
+  EVENTS.forEach((e,i) => tl.push({y:e.y, k:'event', i}));
+  STRUCT.forEach(s => tl.push(s));
+  HIST.forEach(h => tl.push({y:h[0], k:'hist', h:{yl:h[1], t:h[2], n:h[3], c:h[4]}}));
+  GEN_YEARS.forEach(y => tl.push({y, k:'gen'}));
+  const n = Math.floor(rnd(RAND_N[0], RAND_N[1] + 1)); const ys = [];
+  const bad = y => EVENTS.some(e => Math.abs(e.y - y) < 2.4) || GEN_YEARS.some(g => Math.abs(g - y) < 1.2) || ys.some(v => Math.abs(v - y) < 3.2);
+  for(let k = 0; k < 4000 && ys.length < n; k++){ const y = rnd(1576.5, 1723.4); if(!bad(y)) ys.push(y); }
+  ys.forEach(y => tl.push({y, k:'rand'}));
+  return tl.sort((a,b) => a.y - b.y);
+}
+
+/* ============ 붕당 구슬 ============ */
+function spawn(id, p, from){
+  S.orbs[id] = {id, x: from ? from.x : W*.8, y: from ? from.y : H*.45, r:10, alpha: from ? .7 : 0, scale: from ? .5 : .2, alive:true, dying:false, flash:0, stamp:null};
+  if(id !== S.fac) S.op[id] = p;
+  S.tree[id] = 'alive';
+}
+function orbPow(id){ return id === S.fac ? S.st.pow : (S.op[id] || 20); }
+function doSplit(from, into){
+  const p = S.orbs[from]; const pos = p ? {x:p.x, y:p.y} : {x:W/2, y:H/2}; const pw = orbPow(from);
+  into.forEach(c => spawn(c, Math.max(14, pw*.6), pos));
+  if(p){ p.dying = true; p.alive = false; } S.tree[from] = 'gone'; delete S.op[from];
+  bigBurst(pos.x, pos.y, FACTIONS[from].color);
+  floatText(FACTIONS[from].short + ' → ' + into.map(c => FACTIONS[c].short).join(' · '), pos.x, pos.y - 70, '#fff1c4', 36);
+  sSplit(); setTimeout(sSplit, 350); S.shake = .6; S.flash = .4; refreshMini();
+}
+function doFade(ids, label){
+  ids.forEach(id => { const f = S.orbs[id]; if(!f || !f.alive) return; f.dying = true; f.alive = false; S.tree[id] = 'gone'; delete S.op[id];
+    bigBurst(f.x, f.y, FACTIONS[id].color, true); floatText(FACTIONS[id].name + ' 몰락!', f.x, f.y - 60, '#ff9b82', 36); });
+  if(label) banner(label, ''); sBad(); refreshMini();
+}
+function bigBurst(x, y, color, dark){ burst(x, y, color, 90, dark); burst(x, y, '#fff1c4', 30, false); for(let i=0;i<3;i++) S.rings.push({x, y, t:-i*.14, color, max:Math.min(W,H)*(.3 + i*.08)}); }
+function burst(x, y, color, n, dark){ for(let i=0;i<n;i++){ const a = Math.random()*Math.PI*2, v = 40 + Math.random()*190; S.particles.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v - 40, life:1, dec:.5 + Math.random()*.7, size:2 + Math.random()*5, color: dark && Math.random() < .6 ? '#26262e' : color}); } }
+function floatText(text, x, y, color, size){ S.floats.push({text, x, y, t:0, color, size}); }
+
+/* ============ 힘(세력·신임·공론·서원) ============ */
+function applyD(d){
+  const out = [];
+  ['pow','trust','pub'].forEach(k => { if(d[k] == null || d[k] === 0) return; const b = S.st[k]; S.st[k] = clamp(Math.round(b + d[k]), 0, 100); const dv = S.st[k] - b; if(dv){ out.push({k, v:dv}); gaugeDelta(k, dv); } });
+  if(d.set) for(const k in d.set){ const b = S.st[k]; S.st[k] = d.set[k]; if(S.st[k] !== b){ out.push({k, v:S.st[k] - b, set:true}); gaugeDelta(k, S.st[k] - b); } }
+  if(d.seowon){ const b = S.st.seowon; S.st.seowon = Math.max(0, b + d.seowon); if(S.st.seowon !== b){ out.push({k:'seowon', v:S.st.seowon - b}); gaugeDelta('seowon', S.st.seowon - b); } }
+  if(d.grudge){ let g = d.grudge; if(g > 0 && S.perks.has('halfGrudge')) g = g/2; S.st.grudge = Math.max(0, S.st.grudge + g); out.push({k:'grudge', v:g}); }
+  S.powHist.push({y:S.year, v:S.st.pow});
+  renderGauges(); return out;
+}
+function chipsHTML(list){
+  if(!list.length) return '<span class="n">힘의 변화 없음</span>';
+  return list.map(c => { if(c.k === 'grudge') return '<span class="' + (c.v > 0 ? 'm' : 'p') + '">' + (c.v > 0 ? '😠 원한이 쌓였다' : '🤝 원한이 풀렸다') + '</span>';
+    const good = c.v > 0; return '<span class="' + (good ? 'p' : 'm') + '">' + STAT_NAME[c.k] + ' ' + (c.v > 0 ? '+' : '') + c.v + '</span>'; }).join('');
+}
+const GID = {pow:'#gPow', trust:'#gTrust', pub:'#gPub', seowon:'#gSw'};
+function gaugeDelta(k, v){ const g = $(GID[k]); if(!g) return; const d = document.createElement('div'); d.className = 'dv ' + (v > 0 ? 'p' : 'm'); d.textContent = (v > 0 ? '+' : '') + v; g.appendChild(d); setTimeout(() => d.remove(), 1700); }
+function renderGauges(){
+  if(!S) return; const st = S.st;
+  [['pow','#gPow'],['trust','#gTrust'],['pub','#gPub']].forEach(([k,q]) => { const g = $(q); g.querySelector('u').style.width = st[k] + '%'; g.querySelector('.v').textContent = st[k];
+    g.classList.toggle('low', st[k] <= 15); });
+  $('#gPow').classList.toggle('mono', st.pow >= RULE.monoAt);
+  const sw = $('#swN'); if(st.seowon > 0){ sw.textContent = '🏫'.repeat(Math.min(st.seowon, 4)) + (st.seowon > 4 ? '+' : ''); sw.classList.remove('none'); } else { sw.textContent = '없음'; sw.classList.add('none'); }
+  updateScaleText();
+}
+
+/* ============ 저울 ============ */
+const ANG = 16;
+function scaleWord(p){ if(p < 30) return ['다른 붕당 쪽으로 크게 기울어짐', 'warn']; if(p < RULE.bandA) return ['다른 붕당 쪽으로 기울어짐', '']; if(p <= RULE.bandB) return ['균형', 'good']; if(p < RULE.badAt) return ['우리 붕당 쪽으로 기울어짐', '']; return ['우리 붕당 독점 위험!', 'warn']; }
+function updateScaleText(){ const [w, c] = scaleWord(S.st.pow); const el = $('#sState'); el.textContent = w; el.className = 'sState ' + c; $('#scaleBox').classList.toggle('mono', S.st.pow >= RULE.monoAt); }
+function drawScale(dt){
+  const target = -clamp((S.st.pow - 50)/50, -1, 1)*ANG;
+  S.beamA = lerp(S.beamA, target, Math.min(1, dt*2.2));
+  $('#beam').setAttribute('transform', `rotate(${S.beamA.toFixed(2)} 0 6)`);
+  $('#panL').setAttribute('transform', `rotate(${(-S.beamA).toFixed(2)} -120 6)`);
+  $('#panR').setAttribute('transform', `rotate(${(-S.beamA).toFixed(2)} 120 6)`);
+}
+
+/* ============ 왕·수장 그림 ============ */
+function figFallbackSVG(robe, mark){
+  const c1 = robe === 'navy' ? '#2f3f7a' : '#c8342a', c2 = robe === 'navy' ? '#141b3a' : '#6e140e';
+  return '<svg viewBox="0 0 200 290"><defs><linearGradient id="rb' + robe + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + c1 + '"/><stop offset="1" stop-color="' + c2 + '"/></linearGradient></defs>'
+   + '<path d="M30 290 L48 150 Q100 120 152 150 L170 290 Z" fill="url(#rb' + robe + ')" stroke="#d8b46a" stroke-width="3"/>'
+   + '<rect x="74" y="168" width="52" height="44" rx="4" fill="#d8b46a" stroke="#fff3cf" stroke-width="2"/><text x="100" y="198" text-anchor="middle" font-size="22" font-weight="700" fill="' + c2 + '" font-family="serif">' + mark + '</text>'
+   + '<rect x="40" y="226" width="120" height="10" rx="4" fill="#d8b46a"/>'
+   + '<ellipse cx="100" cy="98" rx="38" ry="44" fill="#f2d2b0" stroke="#5a3a10" stroke-width="2"/>'
+   + '<path d="M58 70 Q60 30 100 28 Q140 30 142 70 Z" fill="#1b1b22"/>' + (robe === 'navy' ? '<rect x="38" y="52" width="26" height="8" rx="3" fill="#1b1b22"/><rect x="136" y="52" width="26" height="8" rx="3" fill="#1b1b22"/>' : '<circle cx="68" cy="40" r="14" fill="#1b1b22"/><circle cx="132" cy="40" r="14" fill="#1b1b22"/>')
+   + '<path d="M84 96 h8 M108 96 h8" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"/><path d="M90 122 Q100 128 110 122" stroke="#7a3a2a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';
+}
+const figTok = {king:0, lFig:0};
+function showFigure(box, name, alt, label, robe, mark){
+  const key = box === 'king' ? 'king' : 'lFig'; const tok = ++figTok[key], k = document.getElementById(box);
+  findImg(name).then(u => u || findImg(alt)).then(u => {
+    if(tok !== figTok[key]) return;
+    if(!u){ k.innerHTML = '<div class="kFallback">' + figFallbackSVG(robe, mark) + '</div>'; return; }
+    const img = new Image(); img.alt = label || '';
+    img.onload = () => { if(tok !== figTok[key]) return; k.innerHTML = ''; k.appendChild(img); };
+    img.src = u; });
+}
+function setKing(i){ const K = KINGS[i]; showFigure('king', K.img, K.alt, K.n, 'red', '龍'); }
+function setLeader(anim){
+  const n = Math.min(S.lord, GEN_MAX_IMG); showFigure('lFig', 'leader_' + n, 'leader_1', S.lord + '대 수장', 'navy', '鶴');
+  $('#lTag').textContent = famName() + ' 가문 · ' + S.lord + '대 수장';
+  $('#lordGen').textContent = famName() + ' 가문 ' + S.lord + '대 수장';
+  const F = FACTIONS[S.fac]; $('#lordFac').innerHTML = '<i style="background:' + F.color + '"></i>' + F.name;
+  if(anim){ const l = $('#leader'); l.classList.remove('swap'); void l.offsetWidth; l.classList.add('swap'); }
+}
+function preloadFigures(){ KINGS.forEach(K => { findImg(K.img); if(K.alt) findImg(K.alt); }); for(let i=1;i<=GEN_MAX_IMG;i++) findImg('leader_' + i); }
+
+/* ============ 진행 ============ */
+function processTL(){
+  while(S.tIdx < S.tl.length && S.tl[S.tIdx].y <= S.year){
+    if(S.mode !== 'play') return;
+    const it = S.tl[S.tIdx++];
+    if((it.k === 'event' || it.k === 'story' || it.k === 'rand') && bannerOn){ S.tIdx--; S.year = it.y - 0.0001; return; }
+    if(it.k === 'event'){ S.year = it.y; startReal(EVENTS[it.i]); return; }
+    if(it.k === 'rand'){ S.year = it.y; if(startRand()) return; continue; }
+    if(it.k === 'story'){ showStory(STORY[it.s], null); return; }
+    if(it.k === 'gen'){ if(S.year - S.lordStart >= 12) genChange(false); continue; }
+    if(it.k === 'hist') queueHist(it.h);
+    else if(it.k === 'fade') doFade(it.ids, it.label);
+  }
+}
+
+/* 그 시절 조선 */
+const HIST_ICON = {war:'⚔', culture:'📜', life:'🏮'};
+let histTok = 0;
+function queueHist(h){ S.histQ.push(h); }
+function pumpHist(){
+  if(!S || S.histBusy || !S.histQ.length || S.mode !== 'play' || S.paused || bannerOn) return;
+  const h = S.histQ.shift(), gen = S.gen, tok = ++histTok; S.histBusy = true;
+  const el = $('#hist'); el.className = 'navyCard t-' + h.t;
+  el.innerHTML = '<div class="hk">' + HIST_ICON[h.t] + ' 그 시절 조선에서는 · <b>' + esc(h.yl) + '년</b></div><div class="ht">' + esc(h.n) + '</div><div class="hc">' + esc(h.c) + '</div><div class="hb"><i></i></div>';
+  void el.offsetWidth; el.classList.add('show');
+  const dur = Math.max(3200, 6000/Math.sqrt(S.speed)); el.querySelector('.hb i').style.transitionDuration = dur + 'ms';
+  requestAnimationFrame(() => requestAnimationFrame(() => { const b = el.querySelector('.hb i'); if(b) b.style.width = '0%'; }));
+  if(h.t === 'war'){ sBad(); S.shake = .8; vig(); } else sPage();
+  setTimeout(() => { if(tok !== histTok) return; el.classList.remove('show'); setTimeout(() => { if(S && S.gen === gen && tok === histTok) S.histBusy = false; }, 450); }, dur);
+}
+function hideHist(){ histTok++; $('#hist').classList.remove('show'); if(S) S.histBusy = false; }
+
+let bannerQ = [], bannerOn = false, bannerT = null;
+function banner(t1, t2, cls){ bannerQ.push([t1, t2, cls]); if(!bannerOn) nextBanner(); }
+function nextBanner(){
+  const b = $('#banner'); const it = bannerQ.shift(); if(!it){ bannerOn = false; return; }
+  bannerOn = true; b.className = ''; b.querySelector('.b1').textContent = it[0]; b.querySelector('.b2').textContent = it[1] || ''; void b.offsetWidth; b.className = 'show ' + (it[2] || '');
+  clearTimeout(bannerT); bannerT = setTimeout(() => { b.className = it[2] || ''; bannerT = setTimeout(nextBanner, 420); }, 3000/Math.sqrt(S ? S.speed : 1));
+}
+function clearBanners(){ bannerQ = []; bannerOn = false; clearTimeout(bannerT); $('#banner').className = ''; }
+function vig(){ const v = $('#vig'); v.classList.add('on'); setTimeout(() => v.classList.remove('on'), 1900); }
+
+/* ============ 이야기 카드 ============ */
+let storyCB = null, storyList = null, storyI = 0;
+function showStory(list, cb){
+  S.mode = 'story'; storyList = list; storyI = 0; storyCB = cb; hideHist();
+  $('#story').classList.remove('hidden'); renderStory(); sGong();
+}
+function renderStory(){
+  const c = storyList[storyI]; const last = storyI === storyList.length - 1;
+  const nextLabel = last ? '계속하기 (Enter) ▶' : '다음 (Enter) ▶';
+  const fam = s => String(s).replace(/○○/g, famName());
+  $('#stBox').innerHTML = '<img class="stImg hidden" id="stImg" alt="">'
+    + '<span class="stK">' + esc(fam(c.k)) + '</span>'
+    + '<h2 class="stT goldText">' + esc(fam(c.t)) + '</h2>' + (c.html ? c.html : '<div class="stC">' + fam(fmt(c.c)) + '</div>') + (c.tip ? '<p class="stTip">' + fmt(c.tip) + '</p>' : '')
+    + '<div class="stNav"><div class="stDots">' + storyList.map((_,i) => '<i class="' + (i === storyI ? 'on' : '') + '"></i>').join('') + '</div><button class="btn" id="stNext">' + nextLabel + '</button></div>';
+  if(c.img) loadImg($('#stImg'), c.img);
+  $('#stNext').onclick = nextStory; setTimeout(() => { const b = $('#stNext'); if(b) b.focus(); }, 50);
+}
+function nextStory(){
+  if(!S || S.mode !== 'story') return;
+  if(storyI < storyList.length - 1){ storyI++; sPage(); renderStory(); return; }
+  $('#story').classList.add('hidden'); const cb = storyCB; storyCB = null;
+  if(cb) cb(); else { S.mode = 'play'; }
+}
+
+/* ============ 사건 화면 ============ */
+function typeText(el, text){
+  const segs = text.split('**').map((t,i) => ({t, b:i%2 === 1})).filter(s => s.t); const total = segs.reduce((a,s) => a + s.t.length, 0);
+  const draw = n => { let left = n, out = ''; for(const s of segs){ if(left <= 0) break; const part = esc(s.t.slice(0, left)); left -= s.t.length; out += s.b ? '<b>' + part + '</b>' : part; } el.innerHTML = out; };
+  el.innerHTML = ''; let i = 0; const id = setInterval(() => { i += 2; draw(i); if(i >= total) clearInterval(id); }, 28); S.typers.push(id);
+}
+/* cur = {kind:'real'|'rand'|'person', ev, role, opts:{L,R,B}, ...}  opt = {who, per, say, d, to, luck, cost, color} */
+function openEvent(cur, head){
+  S.mode = 'event'; S.cur = cur; S.armedAt = performance.now() + 900; hideHist(); $('#event').classList.remove('resolved');
+  document.body.classList.add('evOn'); placeTop();
+  $('#evYear').textContent = head.year; const st = $('#evStage'); st.textContent = head.stage; st.className = 'evStage ' + head.stageCls;
+  $('#evTitle').textContent = head.title; $('#evCtx').innerHTML = fmt(head.ctx);
+  const pic = $('#evPic'); pic.innerHTML = '';
+  if(head.img){ const im = new Image(); im.alt = ''; im.className = 'hidden'; pic.appendChild(im); loadImg(im, head.img); im.addEventListener('load', posBubbles, {once:true}); }
+  else if(head.icon) pic.innerHTML = '<div class="ico">' + esc(head.icon) + '</div>';
+  ['L','R'].forEach(s => {
+    const b = $('#bub' + s), o = cur.opts[s];
+    b.classList.toggle('off', !o); if(!o) return;
+    const col = o.color || FACTIONS[S.fac].color; const light = lum(col) > .7;
+    b.style.setProperty('--c', light ? '#9d8f6c' : col); b.style.setProperty('--c2', light ? '#6b5f45' : mix(col, .3));
+    b.style.setProperty('--hl', light ? 'rgba(217,179,94,.5)' : 'rgba(' + hexRgb(col).join(',') + ',.3)');
+    b.querySelector('.who').innerHTML = '<span class="fac">' + esc(o.who) + '</span><span class="per">' + esc(o.per || '') + '</span>';
+    typeText(b.querySelector('.say'), o.say);
+    const dis = o.cost && S.st.seowon < o.cost;
+    b.querySelector('.pick').textContent = dis ? '서원이 없어서 고를 수 없어요' : (s === 'L' ? '눌러서 고르기 (← 키)' : '눌러서 고르기 (→ 키)');
+    b.style.opacity = dis ? .55 : 1;
+  });
+  const bo = cur.opts.B, eb = $('#evBoth');
+  eb.classList.toggle('hidden', !bo); eb.classList.toggle('solo', !!bo && !cur.opts.L && !cur.opts.R);
+  if(bo){ $('#bothBtn').innerHTML = '<span class="bw">' + esc(bo.who) + '</span>' + fmt(bo.say); $('#bothSmall').textContent = (!cur.opts.L && !cur.opts.R) ? '버튼 또는 Enter·↑ 키' : '가운데 버튼 또는 ↑ 키'; }
+  $('#evHint').textContent = head.hint;
+  $('#event').classList.remove('hidden');
+  posBubbles(); setTimeout(posBubbles, 60);
+  sGong(); S.shake = .3;
+}
+function posBubbles(){ const h = $('#evHead'); if(!h) return; const b = h.getBoundingClientRect().bottom; const room = H - 230; $('#event').style.setProperty('--bt', Math.min(room, b + 18) + 'px'); }
+
+function roleOf(ev, fac){
+  if(ev.final) return 'final';
+  if(ev.split && ev.split.from === fac) return 'split';
+  if(ev.custom) return (ev.custom[fac] || ev.custom['*']) ? 'custom' : 'neutral';
+  const b = ev.base ? ev.base[fac] : undefined;
+  if(b === 'fall') return 'fall';
+  if(typeof b === 'number' && ev.lines && ev.lines[fac]){ return b > 0 ? 'win' : 'lose'; }
+  return 'neutral';
+}
+function startReal(ev){
+  const fac = S.fac, role = roleOf(ev, fac), opts = {};
+  const F = FACTIONS[fac];
+  let hint = '우리 가문은 어떻게 할까? 말풍선을 누르거나 ← → 키로 고르세요';
+  if(role === 'split'){
+    const sp = ev.split; ['L','R'].forEach(s => { const o = sp[s]; opts[s] = {who:o.who, per:o.per, say:o.say, d:o.d, to:o.to, color:FACTIONS[o.to].color}; });
+    hint = sp.ask || '우리 가문은 어느 쪽에 설까? ← → 키로 고르세요';
+  } else if(role === 'custom'){
+    const c = ev.custom[fac] || ev.custom['*']; ['L','R'].forEach(s => { opts[s] = {who:c[s].who, per:c[s].per, say:c[s].say, d:c[s].d}; });
+  } else if(role === 'win' || role === 'lose'){
+    const ln = ev.lines[fac];
+    opts.L = {who:F.name, per:'강경하게', say:ln.L}; opts.R = {who:F.name, per:'온건하게', say:ln.R};
+    if(ln.B) opts.B = {who:'↑ 임금의 뜻 따르기', say:ln.B};
+    hint = '우리 가문은 어떻게 할까? ← 강경 · → 온건 · ↑ 임금의 뜻 따르기';
+  } else if(role === 'fall'){
+    const ln = ev.lines[fac]; opts.L = {who:F.name, per:'맞서기', say:ln.L}; opts.R = {who:F.name, per:'항복하기', say:ln.R};
+  } else if(role === 'neutral'){
+    const msg = (ev.neutralMsg && ev.neutralMsg[fac]) || '이 일은 우리 붕당과 직접 관계가 없다. **지켜보기로 했다.**';
+    opts.B = {who:'지켜보기', say:msg}; hint = '버튼을 누르거나 Enter를 눌러 계속하세요';
+  } else if(role === 'final'){
+    opts.B = {who:'새 임금을 맞이하다', say:'**영조**가 우리 가문을 어떻게 평가할까?'}; hint = '버튼을 누르거나 Enter를 눌러 결과를 확인하세요';
+  }
+  openEvent({kind:'real', ev, role, opts}, {year:Math.floor(ev.y) + '년 · ' + ev.era, stage:'실제 역사 · 실록', stageCls:'real', title:ev.title, ctx:ev.ctx, img:ev.img, hint});
+}
+function startRand(){
+  const y = S.year;
+  const okEra = c => !c.era || (y >= c.era[0] && y <= c.era[1]);
+  const pers = PERSONS.filter(p => p.fac.includes(S.fac) && okEra(p) && !S.usedPers.has(p.id));
+  if(pers.length && Math.random() < .3){
+    const p = pick(pers); S.usedPers.add(p.id);
+    const opts = {L:{who:'받아들이기', per:p.n, say:'**' + p.n + '**을(를) 맞이하자! (' + p.fx + ')', d:p.d, perk:p.perk}, R:{who:'사양하기', per:'', say:'지금은 **정중히 사양**하자.', d:{}}};
+    openEvent({kind:'person', p, opts}, {year:Math.floor(y) + '년 무렵', stage:'인물 영입 · 가상 장면', stageCls:'fic', title:p.n + '의 방문', ctx:p.c, icon:'🧑‍🏫', hint:'← 받아들이기 · → 사양하기'});
+    return true;
+  }
+  let pool = RAND.filter(c => okEra(c) && !(c.noMono && S.mono));
+  let fresh = pool.filter(c => !S.usedRand.has(c.id)); if(!fresh.length) fresh = pool; if(!fresh.length) return false;
+  const c = pick(fresh); S.usedRand.add(c.id);
+  const opts = {}; ['L','R'].forEach(s => { const o = c[s]; opts[s] = {who:o.who, per:'', say:o.say, d:o.d || {}, luck:o.luck, cost:o.cost}; });
+  openEvent({kind:'rand', c, opts}, {year:Math.floor(y) + '년 무렵', stage:'조정 사건 · 가상', stageCls:'fic', title:c.n, ctx:c.c, icon:c.ic, hint:'← → 키나 말풍선으로 고르세요'});
+  return true;
+}
+
+/* ============ 고르기 ============ */
+function choose(side){
+  if(!S || S.mode !== 'event' || performance.now() < S.armedAt) return;
+  const cur = S.cur, o = cur.opts[side]; if(!o) return;
+  if(o.cost && S.st.seowon < o.cost){ toast('서원이 없어서 고를 수 없어요'); return; }
+  S.mode = 'result'; S.typers.forEach(clearInterval); S.typers = [];
+  const res = {side, o, chips:[], stamp:'', title:'', luck:null, notes:[]};
+  if(cur.kind === 'real') resolveReal(cur, side, o, res);
+  else {
+    let d = {...(o.d || {})};
+    if(o.cost) d.seowon = (d.seowon || 0) - o.cost;
+    if(o.luck){ const ok = Math.random() < o.luck.p; res.luck = ok; d = {...d, ...(ok ? o.luck.ok : o.luck.no)}; }
+    if(o.perk){ S.perks.add(o.perk); }
+    res.chips = applyD(d);
+    const our = S.orbs[S.fac]; if(our) burst(our.x, our.y, FACTIONS[S.fac].color, 20, false);
+    S.records.push({kind:cur.kind, y:S.year, title:cur.kind === 'person' ? cur.p.n + ' 영입' : cur.c.n, pick:o.who, chips:res.chips});
+  }
+  S.lastRes = res;
+  const good = res.chips.reduce((a,c) => a + (c.k === 'grudge' ? -c.v*3 : c.v), 0) >= 0;
+  if(good) sGood(); else { sBad(); S.shake = .7; }
+  setTimeout(showResult, 850);
+}
+function resolveReal(cur, side, o, res){
+  const ev = cur.ev, fac = S.fac, role = cur.role; let d = {};
+  if(role === 'split'){
+    d = {...o.d}; const b = ev.base && typeof ev.base[fac] === 'number' ? ev.base[fac] : 0; if(b) d.pow = (d.pow || 0) + b;
+    res.newFac = o.to;
+  } else if(role === 'custom'){ d = {...o.d}; }
+  else if(role === 'win'){ const r = RULE.win[side]; d = {}; ['pow','trust','pub','grudge'].forEach(k => { if(r[k]) d[k] = r[k]; }); d.pow = (d.pow || 0) + (r.half ? Math.round(ev.base[fac]/2) : ev.base[fac]); if(side === 'L' && S.perks.has('extraGrudge')) d.grudge = (d.grudge || 0) + 1; }
+  else if(role === 'lose'){
+    const r = RULE.lose[side]; let dmg = ev.base[fac] - Math.round(S.st.grudge*RULE.grudgeHit);
+    if(r.half) dmg = Math.round(dmg/2); if(ev.yesong && S.perks.has('yesongHalf')) dmg = Math.round(dmg/2);
+    d = {pow:dmg}; ['trust','pub'].forEach(k => { if(r[k]) d[k] = r[k]; });
+    if(side === 'L' && S.perks.has('extraGrudge')) d.grudge = 1;
+    if(ev.sayak && ev.sayak.includes(fac)){ let p = Math.min(RULE.sayakMax, S.st.grudge*RULE.sayakPer); if(S.st.trust >= 70) p /= 2; res.sayakP = p; if(Math.random() < p) S.pend = 'sayak'; }
+  } else if(role === 'neutral'){ const b = ev.base && typeof ev.base[fac] === 'number' ? ev.base[fac] : 0; d = b ? {pow:b} : {}; }
+  else if(role === 'fall'){ S.endKey = 'fallBugin'; d = {pow:-S.st.pow}; }
+  res.chips = applyD(d);
+  // 세상 쪽: 다른 붕당 구슬 키우기·줄이기, 도장
+  if(ev.base) for(const id in ev.base){ const b = ev.base[id]; if(typeof b !== 'number') continue; const f = S.orbs[id]; if(!f || !f.alive) continue;
+    if(id !== fac) S.op[id] = clamp((S.op[id] || 20) + b*.8, 6, 92);
+    f.stamp = {text: b > 0 ? '득세' : '축출', color: b > 0 ? '#2f7d4f' : '#c73b2b', t:0}; burst(f.x, f.y, FACTIONS[id].color, b > 0 ? 24 : 36, b < 0); if(b < 0) f.flash = 1; }
+  if(ev.split){ const sp = ev.split; const into = [sp.L.to, sp.R.to]; const was = S.fac;
+    if(res.newFac) S.fac = res.newFac;
+    doSplit(sp.from, into); if(res.newFac){ const other = into.find(x => x !== res.newFac); S.op[other] = clamp(sp.from === 'sarim' ? 100 - S.st.pow : S.st.pow*.8, 14, 86); delete S.op[S.fac]; }
+    banner('붕당이 갈라지다!', FN(sp.from) + ' → ' + into.map(FN).join(' · ') + (res.newFac ? ' · 우리 가문은 ' + FN(res.newFac) : ''));
+    if(res.newFac) setLeader(false); else if(was !== S.fac) setLeader(false); }
+  const lbl = role === 'split' ? o.who + '(' + (o.per || '') + ')' : role === 'win' || role === 'lose' ? (side === 'L' ? '강경' : side === 'R' ? '온건' : '임금의 뜻 따르기') : o.who;
+  S.records.push({kind:'real', id:ev.id, y:ev.y, title:ev.title, pick:lbl, role, chips:res.chips, fac:FN(S.fac)});
+  res.lbl = lbl;
+}
+const ROLE_TXT = {win:'우리 붕당이 힘을 얻는 사건', lose:'우리 붕당이 힘을 잃는 사건', split:'붕당이 갈라지는 사건', custom:'모두가 선택해야 하는 사건', neutral:'지켜본 사건', fall:'우리 붕당이 무너지는 사건', final:'마지막 사건'};
+function showResult(){
+  if(!S || S.mode !== 'result') return;
+  const cur = S.cur, res = S.lastRes, o = res.o;
+  const card = $('#rCard'); let cls = 'rCard navyCard ';
+  let stamp, tags, title, real = '';
+  if(cur.kind === 'real'){ cls += 'real'; stamp = '실록'; tags = '<span>' + Math.floor(cur.ev.y) + '년 ' + esc(cur.ev.title) + '</span><span>' + ROLE_TXT[cur.role] + '</span>'; title = '나의 선택';
+    real = '<b>실제 역사</b>: ' + fmt(cur.ev.real); }
+  else { cls += res.luck == null ? 'fic' : res.luck ? 'luckOk' : 'luckNo'; stamp = res.luck == null ? '가상' : res.luck ? '성공' : '실패';
+    tags = '<span>' + Math.floor(S.year) + '년 무렵 · ' + (cur.kind === 'person' ? '인물 영입' : '조정 사건') + '</span><span>가상(게임 속 이야기)</span>'; title = res.luck == null ? '나의 선택' : res.luck ? '운이 따랐다!' : '운이 따르지 않았다…'; }
+  $('#event').classList.add('resolved');
+  card.className = cls; $('#rStamp').textContent = stamp; $('#rTags').innerHTML = tags; $('#rTitle').textContent = title;
+  $('#rMine').innerHTML = '<b>' + esc(o.who) + (o.per ? ' · ' + esc(o.per) : '') + '</b> — ' + fmt(o.say);
+  $('#rFx').innerHTML = chipsHTML(res.chips);
+  const rr = $('#rReal'); rr.classList.toggle('hidden', !real); rr.innerHTML = real;
+  const notes = [];
+  if(cur.kind === 'real' && cur.role === 'lose' && S.st.grudge >= 2) notes.push('😠 그동안 쌓인 <b>원한</b> 때문에 피해가 더 커졌어요.');
+  if(S.pend === 'sayak') notes.push('⚠ 임금이 우리 가문의 수장에게 <b>사약</b>을 내렸다…');
+  if(S.endKey === 'fallBugin') notes.push('⚠ 북인은 인조반정으로 무너졌다. 우리 가문도…');
+  const fx = $('#rFix'); fx.classList.toggle('hidden', !notes.length); fx.innerHTML = notes.join('<br>');
+  $('#result').classList.remove('hidden');
+  buildMarks(); setTimeout(() => { const b = $('#rNext'); if(b) b.focus(); }, 60);
+}
+function continueGame(){
+  if(!S || S.mode !== 'result') return;
+  const cur = S.cur;
+  $('#result').classList.add('hidden'); $('#event').classList.add('hidden'); document.body.classList.remove('evOn'); placeTop();
+  S.cur = null; S.mode = 'play';
+  if(S.endKey){ endGame(S.endKey); return; }
+  if(cur.kind === 'real') checkMono();
+  const after = () => {
+    const dead = checkDeath(); if(dead){ endGame(dead); return true; }
+    if(cur.kind === 'real' && cur.ev.final){ endGame(finalEnding()); return true; }
+    return false; };
+  if(S.pend === 'sayak'){ S.pend = null; sayakSeq(after); return; }
+  after();
+}
+function checkMono(){
+  if(S.st.pow >= RULE.monoAt) S.monoCount++; else S.monoCount = 0;
+  if(S.monoCount >= RULE.monoTimes){ S.monoCount = 0; S.mono = true; applyD({pub:RULE.monoPub}); banner('독점 경고!', '우리 붕당이 조정을 너무 오래 독차지했어요 · 공론 ' + RULE.monoPub + ' · 3사의 비판이 사라집니다', 'war'); vig(); sBad(); }
+}
+function checkDeath(){
+  const map = {pow:'fall', trust:'dismiss', pub:'traitor'};
+  for(const k of ['pow','trust','pub']){
+    if(S.st[k] > 0) continue;
+    if(S.st.seowon > 0){ S.st.seowon--; S.rescues++; const b = S.st[k]; S.st[k] = RULE.rescue; gaugeDelta(k, RULE.rescue - b); gaugeDelta('seowon', -1); renderGauges();
+      banner('서원이 가문을 구했다!', STAT_NAME[k] + '이(가) 0이 되려는 순간, 서원의 선비들이 나섰다 · ' + STAT_NAME[k] + ' ' + RULE.rescue + ' · 서원 −1'); sGood(); continue; }
+    return map[k];
+  }
+  return null;
+}
+function sayakSeq(after){
+  S.sayaks++; const old = S.lord;
+  showStory([
+    {k:Math.floor(S.year) + '년', t:'수장, 사약을 받다', img:'st_sayak', c:'임금이 ' + famName() + ' 가문의 **' + old + '대 수장**에게 **사약**을 내렸다. 그동안 쌓인 **원한**이 결국 돌아온 것이다.'},
+    {k:'가문은 이어진다', t:(old + 1) + '대 수장', img:'st_inherit', c:'아들이 아버지의 뒤를 이어 **' + (old + 1) + '대 수장**이 되었다. 하지만 가문은 큰 상처를 입었다. (세력 ' + RULE.sayakCut + ')'}
+  ], () => { S.mode = 'play'; genChange(true); after(); });
+}
+function genChange(early){
+  S.lord++; S.lordStart = S.year;
+  const d = {pow: early ? RULE.sayakCut : RULE.genCut, set:{trust:50}}; applyD(d);
+  setLeader(true); sKing();
+  if(!early) banner(S.lord + '대 수장', '아버지의 뒤를 이어 ' + (S.lord === 2 ? '아들' : '자손') + '이 ' + famName() + ' 가문을 이끕니다 · 세력 ' + RULE.genCut + ' · 신임 50');
+  const dead = checkDeath(); if(dead) endGame(dead);
+}
+function finalEnding(){
+  const p = S.st.pow, pub = S.st.pub;
+  if(p >= RULE.badAt) return 'bad';
+  if(p >= RULE.bandA && p <= RULE.bandB && pub >= RULE.truePub) return 'true';
+  if(p < 30) return 'n1';
+  if(p < RULE.bandA) return 'n2';
+  if(p > RULE.bandB) return 'n3';
+  return 'n4';
+}
+function endGame(key){
+  if(!S || S.mode === 'outro' || S.mode === 'ending') return;
+  S.endKey = key; S.mode = 'outro'; const E = ENDINGS[key];
+  banner(E.grade, E.name, E.tone === 'dark' || E.tone === 'red' ? 'war' : ''); sGong();
+  setTimeout(showEnding, 3600);
+}
+
+/* ============ 매 프레임 ============ */
+let last = performance.now();
+function loop(now){ const dt = Math.min(.05, (now - last)/1000); last = now; try{ update(dt, now); render(now/1000); }catch(e){ console.error(e); } requestAnimationFrame(loop); }
+function update(dt){
+  if(!S) return;
+  if(S.mode === 'play' && !S.paused){
+    const slow = S.histQ.length >= 2 ? .5 : 1;
+    S.year = Math.min(END, S.year + dt*S.speed*slow);
+    processTL();
+  }
+  let ki = 0; for(let i=0;i<KINGS.length;i++) if(KINGS[i].y <= S.year) ki = i;
+  if(ki !== S.kingIdx){ const first = S.kingIdx < 0; S.kingIdx = ki; const k = KINGS[ki]; setKing(ki);
+    $('#kingName').textContent = k.n; $('#kingNo').textContent = '제' + k.no + '대 임금';
+    if(!first && !k.same){ const b = S.st.trust; S.st.trust = 50; if(b !== 50) gaugeDelta('trust', 50 - b); renderGauges();
+      banner(k.n + ' 즉위', '제' + k.no + '대 임금, ' + Math.floor(k.y) + '년 · 신임이 50으로 돌아갑니다'); sKing(); } }
+  layout(dt);
+  for(const id in S.orbs){ const f = S.orbs[id]; f.flash = Math.max(0, f.flash - dt*1.2); if(f.stamp){ f.stamp.t += dt; if(f.stamp.t > 3.6) f.stamp = null; } if(f.dying && f.scale < .03) delete S.orbs[id]; }
+  for(let i = S.particles.length - 1; i >= 0; i--){ const p = S.particles[i]; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 70*dt; p.vx *= .985; p.life -= p.dec*dt; if(p.life <= 0) S.particles.splice(i,1); }
+  for(let i = S.floats.length - 1; i >= 0; i--){ S.floats[i].t += dt; if(S.floats[i].t > 2.6) S.floats.splice(i,1); }
+  for(let i = S.rings.length - 1; i >= 0; i--){ S.rings[i].t += dt; if(S.rings[i].t > 1.1) S.rings.splice(i,1); }
+  S.flash = Math.max(0, S.flash - dt*1.6); S.shake = Math.max(0, S.shake - dt*1.4);
+  drawScale(dt); pumpHist();
+  const y = Math.floor(S.year); if(y !== S._hy){ S._hy = y; $('#yr').textContent = y; }
+  $('#tlFill').style.width = ((S.year - START)/(END - START)*100) + '%';
+}
+function layout(dt){
+  const alive = Object.values(S.orbs).filter(f => f.alive); const md = Math.min(W, H);
+  const others = alive.filter(f => f.id !== S.fac);
+  alive.forEach(f => {
+    if(f.id === S.fac){ f.tx = W*.2; f.ty = H*.4; }
+    else { const i = others.indexOf(f), n = others.length; f.tx = W*(n > 2 ? .78 + (i%2)*.08 : .8); f.ty = H*(.3 + (i + 1)/(n + 1)*.36); }
+  });
+  for(const id in S.orbs){ const f = S.orbs[id];
+    if(!f.dying && f.tx != null){ f.x = lerp(f.x, f.tx, Math.min(1, dt*2.2)); f.y = lerp(f.y, f.ty, Math.min(1, dt*2.2)); }
+    const tr = md*(.028 + .085*orbPow(id)/100); f.r = lerp(f.r, tr, Math.min(1, dt*3));
+    f.alpha = lerp(f.alpha, f.dying ? 0 : 1, Math.min(1, dt*(f.dying ? 1.6 : 2.5)));
+    f.scale = lerp(f.scale, f.dying ? 0 : 1, Math.min(1, dt*(f.dying ? .9 : 2.5))); }
+}
+function render(t){
+  ctx.clearRect(0, 0, W, H); if(!S) return;
+  ctx.save();
+  if(S.shake > 0){ ctx.translate((Math.random() - .5)*14*S.shake, (Math.random() - .5)*14*S.shake); }
+  S.rings.forEach(r => { if(r.t < 0) return; const p = r.t/1.1; ctx.globalAlpha = (1 - p)*.8; ctx.strokeStyle = r.color; ctx.lineWidth = 6*(1 - p) + 1; ctx.beginPath(); ctx.arc(r.x, r.y, r.max*p, 0, Math.PI*2); ctx.stroke(); });
+  ctx.globalAlpha = 1;
+  Object.values(S.orbs).sort((a,b) => b.r - a.r).forEach(f => {
+    const F = FACTIONS[f.id]; const r = f.r*f.scale; if(r < 1) return; const mine = f.id === S.fac;
+    ctx.globalAlpha = f.alpha;
+    const g = ctx.createRadialGradient(f.x, f.y, r*.2, f.x, f.y, r*2.1); g.addColorStop(0, F.color + 'aa'); g.addColorStop(1, F.color + '00');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(f.x, f.y, r*2.1, 0, Math.PI*2); ctx.fill();
+    const g2 = ctx.createRadialGradient(f.x - r*.35, f.y - r*.4, r*.1, f.x, f.y, r); g2.addColorStop(0, '#ffffff'); g2.addColorStop(.25, F.color); g2.addColorStop(1, mix(F.color, .35));
+    ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(f.x, f.y, r + Math.sin(t*2 + f.x)*1.2, 0, Math.PI*2); ctx.fill();
+    ctx.lineWidth = mine ? 5 : 2.5; ctx.strokeStyle = f.flash > 0 ? 'rgba(255,90,70,' + f.flash + ')' : (mine ? 'rgba(255,224,138,.98)' : 'rgba(243,223,174,.75)'); ctx.stroke();
+    if(mine){ ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,224,138,' + (.35 + .25*Math.sin(t*3)) + ')'; ctx.beginPath(); ctx.arc(f.x, f.y, r + 10, 0, Math.PI*2); ctx.stroke(); }
+    ctx.fillStyle = lum(F.color) > .6 ? '#1b1510' : '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '900 ' + Math.max(13, Math.min(30, r*.55)) + 'px "Noto Sans KR",sans-serif'; ctx.fillText(F.short, f.x, f.y);
+    if(mine){ ctx.font = '900 14px "Noto Sans KR",sans-serif'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.strokeText('★ 우리 붕당', f.x, f.y + r + 22); ctx.fillStyle = '#ffe08a'; ctx.fillText('★ 우리 붕당', f.x, f.y + r + 22); }
+    if(f.stamp){ const st = f.stamp; const a = Math.min(1, st.t*4)*(st.t > 3 ? Math.max(0, 1 - (st.t - 3)/.6) : 1); ctx.globalAlpha = a;
+      ctx.save(); ctx.translate(f.x, f.y - r - 24); ctx.rotate(-.12); ctx.font = '900 18px "Gowun Batang",serif'; const w = ctx.measureText(st.text).width + 20;
+      ctx.fillStyle = st.color; ctx.fillRect(-w/2, -15, w, 30); ctx.strokeStyle = '#fff1dc'; ctx.lineWidth = 2; ctx.strokeRect(-w/2 + 3, -12, w - 6, 24); ctx.fillStyle = '#fff1dc'; ctx.fillText(st.text, 0, 1); ctx.restore(); }
+  });
+  ctx.globalAlpha = 1;
+  S.particles.forEach(p => { ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size*p.life, 0, Math.PI*2); ctx.fill(); });
+  ctx.globalAlpha = 1;
+  S.floats.forEach(f => { const a = f.t < .3 ? f.t/.3 : Math.max(0, 1 - (f.t - 1.8)/.8); ctx.globalAlpha = a; ctx.font = '900 ' + f.size + 'px "Noto Sans KR",sans-serif'; ctx.textAlign = 'center';
+    ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.strokeText(f.text, f.x, f.y - f.t*30); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y - f.t*30); });
+  ctx.restore(); ctx.globalAlpha = 1;
+  if(S.flash > 0){ ctx.fillStyle = 'rgba(255,240,200,' + (S.flash*.35) + ')'; ctx.fillRect(0, 0, W, H); }
+}
+function buildMarks(){ $('#tlMarks').innerHTML = EVENTS.map(e => { const r = S.records.find(r => r.id === e.id); return '<div class="mk ' + (r ? 'ok' : '') + '" style="left:' + ((e.y - START)/(END - START)*100) + '%" title="' + esc(e.title) + '"></div>'; }).join(''); }
+
+/* ============ 계보도 ============ */
+function treeSVG(mode){
+  const ids = Object.keys(FACTIONS);
+  let s = '<svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans KR, sans-serif">';
+  ids.forEach(id => { const F = FACTIONS[id]; if(!F.parent) return; const v = S ? S.tree[id] : null; if(mode === 'live' && !v) return;
+    const [x1,y1] = FACTIONS[F.parent].tree, [x2,y2] = F.tree; const my = (y1 + y2)/2;
+    s += '<path d="M' + x1 + ' ' + (y1 + 13) + ' C ' + x1 + ' ' + my + ', ' + x2 + ' ' + my + ', ' + x2 + ' ' + (y2 - 13) + '" fill="none" stroke="' + F.color + '" stroke-opacity=".7" stroke-width="1.8"/>'; });
+  const path = S ? myPath() : [];
+  ids.forEach(id => { const F = FACTIONS[id]; const [x,y] = F.tree; const v = S ? S.tree[id] : 'alive'; let op = 1;
+    if(mode === 'live'){ if(!v) op = .12; else if(v === 'gone') op = .45; }
+    const tc = lum(F.color) > .6 ? '#1b1510' : '#fff';
+    if(path.includes(id)) s += '<circle cx="' + x + '" cy="' + y + '" r="17" fill="none" stroke="#ffe08a" stroke-width="2"/><text x="' + (x + 15) + '" y="' + (y - 11) + '" font-size="10" fill="#ffe08a">★</text>';
+    s += '<g opacity="' + op + '"><circle cx="' + x + '" cy="' + y + '" r="13" fill="' + F.color + '" stroke="rgba(255,255,255,.5)"/><text x="' + x + '" y="' + (y + 3.5) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="' + tc + '">' + F.short + '</text></g>'; });
+  const lab = [['1575 이조 전랑',150,52],['1591 건저의',205,108],['1683 남인 처벌',95,108]];
+  lab.forEach(l => s += '<text x="' + l[1] + '" y="' + l[2] + '" text-anchor="middle" font-size="7.5" fill="#c8bfa9">' + l[0] + '</text>');
+  return s + '</svg>';
+}
+function myPath(){ const p = []; let id = S.fac; while(id){ p.push(id); id = FACTIONS[id].parent; } return p; }
+function refreshMini(){ if(S){ $('#miniSvg').innerHTML = treeSVG('live'); if(!$('#treeModal').classList.contains('hidden')) $('#treeBig').innerHTML = treeSVG('live'); } }
+let treePaused = false;
+function openTree(){ if(!S) return; $('#treeBig').innerHTML = treeSVG('live'); $('#treeModal').classList.remove('hidden'); treePaused = S.mode === 'play' && !S.paused; if(treePaused) S.paused = true; }
+function closeTree(){ $('#treeModal').classList.add('hidden'); if(S && treePaused) S.paused = false; treePaused = false; }
+
+/* ============ 엔딩 ============ */
+function powChart(){
+  const Wc = 900, Hc = 260, pl = 46, pr = 14, pt = 18, pb = 30, Y0 = 1575, Y1 = 1725;
+  const X = y => pl + (clamp(y, Y0, Y1) - Y0)/(Y1 - Y0)*(Wc - pl - pr);
+  const Y = v => pt + (1 - v/100)*(Hc - pt - pb);
+  let s = '<svg viewBox="0 0 ' + Wc + ' ' + Hc + '" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans KR, sans-serif">';
+  s += '<rect x="' + pl + '" y="' + Y(RULE.bandB) + '" width="' + (Wc - pl - pr) + '" height="' + (Y(RULE.bandA) - Y(RULE.bandB)) + '" fill="#7fdca5" opacity=".18"/>';
+  s += '<rect x="' + pl + '" y="' + Y(100) + '" width="' + (Wc - pl - pr) + '" height="' + (Y(RULE.badAt) - Y(100)) + '" fill="#d13a2a" opacity=".16"/>';
+  [0,30,45,55,80,100].forEach(v => s += '<text x="' + (pl - 6) + '" y="' + (Y(v) + 4) + '" text-anchor="end" font-size="11" fill="#aeb2c8">' + v + '</text>');
+  s += '<text x="' + (Wc - pr - 4) + '" y="' + (Y(50) + 4) + '" text-anchor="end" font-size="11" fill="#7fdca5">균형(45~55)</text><text x="' + (Wc - pr - 4) + '" y="' + (Y(90) + 4) + '" text-anchor="end" font-size="11" fill="#ff8b6b">독점(80 이상)</text>';
+  [1575,1600,1625,1650,1675,1700,1724].forEach(y => s += '<text x="' + X(y) + '" y="' + (Hc - 10) + '" text-anchor="middle" font-size="11" fill="#aeb2c8">' + y + '</text>');
+  const pts = [{y:Y0, v:powAt(Y0)}].concat(S.powHist.filter(p => p.y > Y0)); let d = '';
+  pts.forEach((p,i) => { d += (i ? ' L' + X(p.y) + ' ' + Y(pts[i-1].v) + ' L' : 'M') + X(p.y) + ' ' + Y(p.v); });
+  d += ' L' + X(S.year) + ' ' + Y(S.st.pow);
+  s += '<path d="' + d + '" fill="none" stroke="#f3dfae" stroke-width="3" stroke-linejoin="round"/>';
+  S.records.filter(r => r.kind === 'real').forEach(r => { const ev = EVENTS.find(e => e.id === r.id); s += '<circle cx="' + X(r.y) + '" cy="' + Y(powAt(r.y)) + '" r="4.5" fill="#d8b46a" stroke="#fff3cf"><title>' + esc(ev ? ev.title : r.title) + '</title></circle>'; });
+  return s + '</svg>';
+}
+function powAt(y){ let v = RULE.start.pow; S.powHist.forEach(p => { if(p.y <= y + .001) v = p.v; }); return v; }
+const EV_CLS = {'○':'v-o','△':'v-tri','◎':'v-dbl','✕':'v-x','—':'v-dash'};
+const EV_TXT = {fam:{'○':'가문이 높은 자리에 올랐다','△':'살아남았지만 높이 오르지 못했다','◎':'최고의 권력을 누렸다','✕':'가문이 무너졌다'},
+                hist:{'○':'조정의 견제와 균형이 남았다','✕':'견제 세력이 사라졌다','—':'평가할 수 없다'}};
+function showEnding(){
+  if(!S) return; S.mode = 'ending'; const key = S.endKey, E = ENDINGS[key];
+  ['#hud','#tl','#mini','#event','#result','#scaleBox','#king','#leader','#story'].forEach(q => $(q).classList.add('hidden')); hideHist();
+  const fill = s => String(s).replace(/○○/g, famName());
+  const rows = S.records.map(r => '<tr><td><b>' + esc(r.title) + '</b><br><small>' + Math.floor(r.y) + '년' + (r.kind === 'real' ? ' · 실제 역사' : ' · 가상') + '</small></td><td>' + esc(r.pick) + '</td><td class="fx">' + chipsHTML(r.chips).replace(/<span class="/g, '<span class="tag ') + '</td></tr>').join('');
+  $('#eInner').innerHTML =
+    '<div class="eTop tone-' + E.tone + '"><div class="portrait" id="ePortrait">' + (key === 'true' ? '名' : key === 'bad' ? '獨' : E.tone === 'dark' ? '落' : '家') + '</div>'
+    + '<div class="kicker">' + esc(famName()) + ' 가문 · ' + S.lord + '대 수장 · ' + esc(FN(S.fac)) + ' · ' + Math.floor(Math.min(S.year, 1724)) + '년까지' + (PLAYER ? ' · ' + esc(PLAYER.sid) + ' ' + esc(PLAYER.name) : '') + '</div>'
+    + '<span class="endGrade">' + esc(E.grade) + '</span><div class="rank goldText">' + esc(E.name) + '</div>'
+    + '<div class="evals"><div class="eval ' + EV_CLS[E.fam] + '" id="ev1"><span>가문의 평가</span><b>' + E.fam + '</b><small>' + esc(EV_TXT.fam[E.fam] || '') + '</small></div>'
+    + '<div class="eval ' + EV_CLS[E.hist] + '" id="ev2"><span>역사의 평가</span><b>' + E.hist + '</b><small>' + esc(EV_TXT.hist[E.hist] || '') + '</small></div></div>'
+    + '<div class="endText">' + fill(fmt(E.text)) + '</div><p class="endWhy">' + esc(E.why) + '</p>'
+    + (E.epi ? '<div class="epi" id="epi"><h3>' + esc(E.epi.t) + '…</h3><img id="epiImg" class="hidden" alt=""><p>' + fmt(E.epi.c) + '</p><span class="bigX">역사의 평가 ✕</span></div>' : '')
+    + '<p class="saveMsg" id="saveMsg">' + (PLAYER ? '결과를 저장하는 중…' : '연습 모드: 결과가 저장되지 않습니다') + '</p></div>'
+    + '<div class="stats"><div class="stat"><b>' + S.st.pow + '</b><span>세력</span></div><div class="stat"><b>' + S.st.trust + '</b><span>신임</span></div><div class="stat"><b>' + S.st.pub + '</b><span>공론</span></div><div class="stat"><b>' + S.st.seowon + '</b><span>남은 서원</span></div><div class="stat"><b>' + S.lord + '대</b><span>수장</span></div><div class="stat"><b>' + S.sayaks + '번</b><span>사약을 받은 수장</span></div></div>'
+    + '<div class="panel navyCard"><h3>⚖️ 우리 붕당의 세력 기록</h3><p class="sub">초록 띠는 균형(45~55), 붉은 띠는 독점(80 이상)입니다. 점은 실제 역사 사건입니다.</p>' + powChart() + '</div>'
+    + '<div class="cmp"><div class="panel navyCard"><h3>나의 선택 기록</h3><div class="tblwrap"><table class="endRecord"><thead><tr><th>사건</th><th>나의 선택</th><th>바뀐 힘</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>'
+    + '<div class="panel navyCard"><h3>붕당 계보</h3><p class="sub">★ 우리 가문이 걸어온 길</p>' + treeSVG('real') + '</div></div>'
+    + '<div class="row"><button class="big primary" id="again">다시 도전하기</button><button class="big" id="toTitle">처음 화면으로</button></div>';
+  const pi = document.createElement('img'); pi.alt = ''; pi.className = 'hidden'; pi.addEventListener('load', () => { const pp = $('#ePortrait'); pp.textContent = ''; pp.classList.add('wide'); pi.classList.remove('hidden'); pp.appendChild(pi); }); loadImg(pi, E.img);
+  if(E.epi) loadImg($('#epiImg'), E.epi.img);
+  ['#ev1','#ev2'].forEach((q,i) => setTimeout(() => { const e = $(q); if(e) e.classList.add('stampIn'); }, 400 + i*500));
+  $('#ending').classList.remove('hidden'); $('#ending').scrollTop = 0;
+  $('#again').onclick = () => resetGame(); $('#toTitle').onclick = () => { $('#ending').classList.add('hidden'); $('#title').classList.remove('hidden'); S = null; };
+  if(PLAYER && !S.saved){ S.saved = true; saveResult(); }
+}
+
+/* ============ 시작·조작 ============ */
+function setSpeed(s){ if(PLAYER) return; speedPref = s; if(S) S.speed = s; document.querySelectorAll('.spd').forEach(b => b.classList.toggle('on', +b.dataset.s === s)); }
+function applyRoomSpeed(s){ s = [1,2,4].includes(+s) ? +s : 1; if(!PLAYER) return; PLAYER.speed = s; if(S) S.speed = s; const l = $('#spdLock'); if(l) l.textContent = '속도 ' + s + '배'; }
+function togglePause(){ if(!S || S.mode !== 'play') return; S.paused = !S.paused; $('#pauseOv').classList.toggle('hidden', !S.paused); $('#pauseBtn').textContent = S.paused ? '계속하기' : '일시정지'; }
+function goFullscreen(){ const d = document.documentElement; if(document.fullscreenElement || document.webkitFullscreenElement) return; try{ const r = (d.requestFullscreen || d.webkitRequestFullscreen).call(d, {navigationUI:'hide'}); if(r && r.catch) r.catch(() => {}); }catch(e){} }
+function toggleFullscreen(){ if(document.fullscreenElement || document.webkitFullscreenElement){ try{ (document.exitFullscreen || document.webkitExitFullscreen).call(document); }catch(e){} } else goFullscreen(); }
+function resetGame(){
+  hideHist(); clearBanners(); S = newState(); S.tl = buildTL();
+  spawn('sarim', 40); S.orbs.sarim.x = W*.2; S.orbs.sarim.y = H*.4;
+  ['#title','#ending','#event','#result','#pauseOv','#story','#teacher'].forEach(q => $(q).classList.add('hidden')); document.body.classList.remove('evOn');
+  ['#hud','#tl','#scaleBox','#king','#leader'].forEach(q => $(q).classList.remove('hidden')); $('#mini').classList.toggle('hidden', !miniOn);
+  $('#whoMe').textContent = PLAYER ? PLAYER.sid + ' ' + PLAYER.name : '연습 모드';
+  $('#pauseBtn').textContent = '일시정지'; S.beamA = 0;
+  setLeader(false); renderGauges(); buildMarks(); refreshMini();
+  $('#hudSpd').classList.toggle('hidden', !!PLAYER); $('#spdLock').classList.toggle('hidden', !PLAYER);
+  if(PLAYER) applyRoomSpeed(PLAYER.speed || 1); else setSpeed(speedPref);
+  setTimeout(placeTop, 30);
+}
+function beginPlay(){ goFullscreen(); if(!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ AC = null; } } if(AC && AC.state === 'suspended') AC.resume(); resetGame(); }
+
+$('#fsBtn').onclick = toggleFullscreen;
+document.querySelectorAll('.spd').forEach(b => b.onclick = () => setSpeed(+b.dataset.s));
+$('#pauseBtn').onclick = togglePause;
+$('#mini').onclick = openTree; $('#mini').onkeydown = e => { if(e.key === 'Enter') openTree(); };
+$('#treeClose').onclick = closeTree; $('#treeModal').onclick = e => { if(e.target.id === 'treeModal') closeTree(); };
+$('#miniBtn').onclick = () => { miniOn = !miniOn; $('#mini').classList.toggle('hidden', !miniOn); };
+$('#muteBtn').onclick = () => { muted = !muted; $('#muteBtn').textContent = muted ? '소리 끔' : '소리 켬'; };
+$('#bubL').onclick = () => choose('L'); $('#bubR').onclick = () => choose('R'); $('#bothBtn').onclick = () => choose('B');
+$('#rNext').onclick = continueGame;
+addEventListener('keydown', e => {
+  if(!S || $('#title').classList.contains('hidden') === false) return;
+  if(!$('#treeModal').classList.contains('hidden')){ if(e.key === 'Escape' || e.key === ' '){ e.preventDefault(); closeTree(); } return; }
+  if(S.mode === 'story'){ if(e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight'){ e.preventDefault(); nextStory(); } }
+  else if(S.mode === 'event'){ const solo = S.cur && !S.cur.opts.L && !S.cur.opts.R;
+    if(e.key === 'ArrowLeft') choose('L'); else if(e.key === 'ArrowRight') choose('R'); else if(e.key === 'ArrowUp' || (solo && e.key === 'Enter')){ e.preventDefault(); choose('B'); } }
+  else if(S.mode === 'result'){ if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); continueGame(); } }
+  else if(S.mode === 'play'){ if(e.key === ' ' || e.key === 'p' || e.key === 'P'){ e.preventDefault(); togglePause(); } else if(!PLAYER && (e.key === '1' || e.key === '2' || e.key === '4')) setSpeed(+e.key); }
+});
+
+/* 배경·첫 화면 그림 */
+(function(){ const im = new Image(); loadImg(im, 'hall');
+  im.addEventListener('load', () => { const b = $('#bgHall'); b.style.backgroundImage = 'url("' + im.src + '")'; b.classList.add('img'); });
+  loadImg($('#titleImg'), 'title', () => {}); })();
+$('#ver').textContent = VERSION;
+preloadFigures(); setTimeout(() => { EVENTS.forEach(e => findImg(e.img)); ['st_sayak','st_inherit'].forEach(findImg); }, 1500);
+requestAnimationFrame(loop);
+const CRC = (() => { const t = []; for(let n=0;n<256;n++){ let c = n; for(let k=0;k<8;k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = b => { let c = 0xFFFFFFFF; for(let i=0;i<b.length;i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zip(files){
+  const enc = new TextEncoder(), parts = [], cd = []; let off = 0;
+  const u16 = v => [v & 255, (v >>> 8) & 255], u32 = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+  files.forEach(f => { const name = enc.encode(f.name), data = enc.encode(f.data), crc = crc32(data);
+    const head = [].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0));
+    parts.push(new Uint8Array(head), name, data);
+    cd.push(new Uint8Array([].concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(off))), name);
+    off += head.length + name.length + data.length; });
+  let size = 0; cd.forEach(x => { parts.push(x); size += x.length; });
+  parts.push(new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(size), u32(off), u16(0))));
+  return new Blob(parts, {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+const xesc = s => String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const colName = i => { let s = ''; i += 1; while(i > 0){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+function makeXlsx(head, rows, widths, sheetName){
+  const all = [head].concat(rows), x = [];
+  all.forEach((r, ri) => { x.push(`<row r="${ri+1}">`); r.forEach((v, ci) => { const ref = colName(ci) + (ri+1), sty = ri === 0 ? ' s="1"' : ' s="2"';
+    x.push(typeof v === 'number' && isFinite(v) ? `<c r="${ref}"${sty}><v>${v}</v></c>` : `<c r="${ref}"${sty} t="inlineStr"><is><t xml:space="preserve">${xesc(v)}</t></is></c>`); }); x.push('</row>'); });
+  const cols = '<cols>' + widths.map((w, i) => `<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('') + '</cols>';
+  const X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  return zip([
+    {name:'[Content_Types].xml', data: X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'},
+    {name:'_rels/.rels', data: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+    {name:'xl/workbook.xml', data: X + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + xesc(sheetName || '결과') + '" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+    {name:'xl/_rels/workbook.xml.rels', data: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'},
+    {name:'xl/styles.xml', data: X + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="맑은 고딕"/></font><font><b/><sz val="11"/><name val="맑은 고딕"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE3EAF6"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'},
+    {name:'xl/worksheets/sheet1.xml', data: X + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' + cols + '<sheetData>' + x.join('') + '</sheetData></worksheet>'}
+  ]);
+}
+/* ============ 저장소: 토론 광장·기울어진 저울과 같은 Firebase 프로젝트·규칙을 그대로 씀 (경로 tg/방코드) ============
+   방 코드는 'SJ'로 시작해 다른 게임 방과 겹치지 않음. 연결이 안 되면 '체험 모드'(이 브라우저 안에서만) */
+const FIREBASE = {
+  apiKey: "AIzaSyCHFNiRp77fxKtWXRmDXOgLk7tY_SB-zBY",
+  authDomain: "debate-42cd9.firebaseapp.com",
+  databaseURL: "https://debate-42cd9-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "debate-42cd9",
+  storageBucket: "debate-42cd9.firebasestorage.app",
+  messagingSenderId: "881025534515",
+  appId: "1:881025534515:web:e99f49704491f78ea5f146"
+};
+const KIND = 'sujang8';
+
+function fbCheck(obj, path){ // Firebase처럼 잘못된 키·undefined를 막음 (체험 모드에서도 같은 오류를 미리 잡기 위해)
+  if(obj === undefined) throw new Error('undefined 값: ' + path);
+  if(obj && typeof obj === 'object') for(const [k,v] of Object.entries(obj)){ if(/[.#$\[\]\/]/.test(k)) throw new Error('잘못된 키: ' + path + '/' + k); fbCheck(v, path + '/' + k); }
+}
+function makeMock(){
+  const KEY = 'sj_mock_db'; const load = () => ls.get(KEY, {rooms:{}}); const save = db => { ls.set(KEY, db); subs.forEach(f => f()); };
+  const subs = []; let uid = ls.get('sj_mock_uid', null); if(!uid){ uid = 'm' + Math.random().toString(36).slice(2, 10); ls.set('sj_mock_uid', uid); }
+  addEventListener('storage', e => { if(e.key === KEY) subs.forEach(f => f()); });
+  return {
+    mock:true,
+    async init(){ return uid; },
+    async getRoom(c){ const r = load().rooms[c]; return r ? r.doc : null; },
+    async createRoom(c, data){ fbCheck(data, 'doc'); const db = load(); db.rooms[c] = {doc:data, players:{}}; save(db); },
+    async getPlayer(c, id){ const r = load().rooms[c]; return r && r.players ? r.players[id] || null : null; },
+    async setPlayer(c, id, data){ fbCheck(data, 'player'); const db = load(); if(!db.rooms[c]) throw new Error('방 없음'); db.rooms[c].players = db.rooms[c].players || {}; db.rooms[c].players[id] = data; save(db); },
+    async updatePlayer(c, id, patch){ fbCheck(patch, 'player'); const db = load(); if(!db.rooms[c]) throw new Error('방 없음'); const p = db.rooms[c].players[id] || {}; db.rooms[c].players[id] = {...p, ...patch}; save(db); },
+    watchPlayers(c, cb){ const f = () => { const r = load().rooms[c]; cb(r ? r.players || {} : {}); }; subs.push(f); f(); return () => subs.splice(subs.indexOf(f), 1); },
+    async updateRoom(c, patch){ fbCheck(patch, 'doc'); const db = load(); if(!db.rooms[c]) throw new Error('방 없음'); db.rooms[c].doc = {...db.rooms[c].doc, ...patch}; save(db); },
+    watchRoom(c, cb){ const f = () => { const r = load().rooms[c]; cb(r ? r.doc : null); }; subs.push(f); f(); return () => subs.splice(subs.indexOf(f), 1); }
+  };
+}
+async function makeFirebase(cfg){
+  const V = '10.12.2';
+  const {initializeApp} = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+  const {getAuth, signInAnonymously, onAuthStateChanged} = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
+  const D = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-database.js`);
+  const app = initializeApp(cfg, 'sujang8'); const auth = getAuth(app); const db = D.getDatabase(app);
+  const base = c => `tg/${c}`;
+  return {
+    mock:false,
+    async init(){ await signInAnonymously(auth); return new Promise(res => onAuthStateChanged(auth, u => u && res(u.uid))); },
+    async getRoom(c){ const s = await D.get(D.ref(db, base(c) + '/doc')); return s.exists() ? s.val() : null; },
+    async createRoom(c, data){ fbCheck(data, 'doc'); await D.set(D.ref(db, base(c) + '/doc'), data); },
+    async getPlayer(c, id){ const s = await D.get(D.ref(db, `${base(c)}/players/${id}`)); return s.exists() ? s.val() : null; },
+    async setPlayer(c, id, data){ fbCheck(data, 'player'); await D.set(D.ref(db, `${base(c)}/players/${id}`), data); },
+    async updatePlayer(c, id, patch){ fbCheck(patch, 'player'); await D.update(D.ref(db, `${base(c)}/players/${id}`), patch); },
+    watchPlayers(c, cb){ return D.onValue(D.ref(db, base(c) + '/players'), s => cb(s.val() || {})); },
+    async updateRoom(c, patch){ fbCheck(patch, 'doc'); await D.update(D.ref(db, base(c) + '/doc'), patch); },
+    watchRoom(c, cb){ return D.onValue(D.ref(db, base(c) + '/doc'), s => cb(s.val())); }
+  };
+}
+let DB = null, UID = null, dbPromise = null;
+function withTimeout(p, ms){ return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]); }
+function getDB(){
+  if(dbPromise) return dbPromise;
+  dbPromise = (async () => {
+    const forceMock = /[?&]mock=1/.test(location.search);
+    if(!forceMock){
+      try{ const fb = await withTimeout(makeFirebase(FIREBASE), 12000); UID = await withTimeout(fb.init(), 12000); DB = fb; return DB; }
+      catch(e){ console.warn('[저장] Firebase 연결 실패, 체험 모드로 전환', e); toast('서버에 연결하지 못했어요. 체험 모드(이 기기 안에서만 저장)로 진행합니다.', 5000); }
+    }
+    DB = makeMock(); UID = await DB.init(); return DB;
+  })();
+  return dbPromise;
+}
+
+/* ============ 학생 입장 ============ */
+const qsRoom = (location.search.match(/[?&]room=([A-Za-z0-9]+)/) || [])[1];
+if(qsRoom) $('#inRoom').value = qsRoom.toUpperCase();
+(function(){ const last = ls.get('sj_me', null); if(last){ if(!qsRoom && last.room) $('#inRoom').value = last.room; $('#inSid').value = last.sid || ''; $('#inName').value = last.name || ''; } })();
+$('#inRoom').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+$('#inSid').addEventListener('input', e => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5); });
+function formMsg(t){ $('#formMsg').textContent = t || ''; }
+let starting = false, unwatchS = null;
+$('#startBtn').onclick = async () => {
+  if(starting) return;
+  const room = $('#inRoom').value.trim().toUpperCase(), sid = $('#inSid').value.trim(), name = $('#inName').value.trim();
+  if(!room){ formMsg('선생님이 알려 준 방 코드를 입력하세요. (방 코드 없이 해 보려면 [연습하기])'); $('#inRoom').focus(); return; }
+  if(!/^\d{5}$/.test(sid)){ formMsg('학번은 숫자 5자리로 입력하세요. 예) 30101'); $('#inSid').focus(); return; }
+  if(!name){ formMsg('이름을 입력하세요.'); $('#inName').focus(); return; }
+  starting = true; formMsg(''); $('#startBtn').textContent = '확인하는 중…';
+  try{
+    await getDB();
+    const doc = await withTimeout(DB.getRoom(room), 10000);
+    if(!doc || doc.kind !== KIND){ formMsg('방 코드 「' + room + '」를 찾을 수 없어요. 다시 확인해 주세요.'); return; }
+    const old = await DB.getPlayer(room, UID) || {};
+    const t = Date.now();
+    await DB.setPlayer(room, UID, {...old, sid, name, status:'playing', plays: old.plays || 0, best: old.best || 0, joinedAt: old.joinedAt || t, seenAt: t});
+    PLAYER = {room, sid, name}; ls.set('sj_me', {room, sid, name}); PLAYER.speed = doc.speed || 1;
+    beginPlay();
+    if(unwatchS) unwatchS(); unwatchS = DB.watchRoom(room, d => { if(d && PLAYER && PLAYER.room === room) applyRoomSpeed(d.speed || 1); });
+  }catch(e){ console.error(e); formMsg('입장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요.'); }
+  finally{ starting = false; $('#startBtn').textContent = '수장 되기'; }
+};
+$('#practiceBtn').onclick = () => { if(unwatchS){ unwatchS(); unwatchS = null; } PLAYER = null; formMsg(''); beginPlay(); };
+
+async function saveResult(){
+  const msg = $('#saveMsg');
+  try{
+    await getDB();
+    const old = await DB.getPlayer(PLAYER.room, UID) || {};
+    const t = Date.now(); const E = ENDINGS[S.endKey]; const sc = END_SCORE[S.endKey] || 0; const picks = {};
+    S.records.filter(r => r.kind === 'real').forEach(r => { picks['r_' + r.id] = r.pick; });
+    EVENTS.forEach(e => { if(!picks['r_' + e.id]) picks['r_' + e.id] = ''; });
+    const better = sc > (old.bestScore || 0);
+    const patch = {sid:PLAYER.sid, name:PLAYER.name, status:'done', plays:(old.plays || 0) + 1, trueCount:(old.trueCount || 0) + (S.endKey === 'true' ? 1 : 0),
+      bestScore: better ? sc : (old.bestScore || 0), bestEnd: better ? E.grade + ' · ' + E.name : (old.bestEnd || ''),
+      lastEnd:E.grade + ' · ' + E.name, lastKey:S.endKey, lastFac:FN(S.fac), lastYear:Math.floor(Math.min(S.year, 1724)), lastPow:S.st.pow, lastTrust:S.st.trust, lastPub:S.st.pub,
+      lastLord:S.lord, lastSayak:S.sayaks, lastAt:t, ...picks};
+    await withTimeout(DB.updatePlayer(PLAYER.room, UID, patch), 12000);
+    if(msg){ msg.className = 'saveMsg ok'; msg.textContent = '✓ 결과가 저장되었습니다' + (DB.mock ? ' (체험 모드: 이 기기에만)' : '') + ' · 도전 ' + patch.plays + '회째'; }
+  }catch(e){ console.error(e); S.saved = false; if(msg){ msg.className = 'saveMsg fail'; msg.innerHTML = '저장하지 못했어요. <button class="chip" id="retrySave">다시 저장</button>'; const b = $('#retrySave'); if(b) b.onclick = () => { msg.className = 'saveMsg'; msg.textContent = '결과를 저장하는 중…'; S.saved = true; saveResult(); }; } }
+}
+
+/* ============ 교사 화면 ============ */
+let TROOM = null, unwatchT = null, unwatchTR = null, TPLAYERS = {};
+const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function myRooms(){ return ls.get('sj_rooms', []); }
+$('#teacherBtn').onclick = async () => { $('#title').classList.add('hidden'); $('#teacher').classList.remove('hidden'); tcHome(); };
+function tcShell(inner){ $('#tcInner').innerHTML = '<div class="tcHead"><h2 class="goldText">선생님 화면 · 수장의 길</h2><button class="big" id="tcBack">← 첫 화면</button></div>' + inner;
+  $('#tcBack').onclick = () => { if(unwatchT){ unwatchT(); unwatchT = null; } $('#teacher').classList.add('hidden'); $('#title').classList.remove('hidden'); }; }
+async function tcHome(){
+  tcShell('<div class="panel navyCard" style="margin-top:16px"><p class="sub" id="tcConn">서버에 연결하는 중…</p><div class="row" style="justify-content:flex-start"><input id="memoIn" maxlength="20" placeholder="방 이름(선택) 예: 3학년 2반" style="padding:12px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--cream);font-size:15px;font-family:inherit;min-width:220px"><label class="mini" style="display:flex;align-items:center;gap:6px;color:var(--cream)">학생 게임 속도 <select id="spdIn" style="padding:10px 12px;border-radius:999px;border:1px solid var(--line);background:#252b49;color:var(--cream);font-size:15px;font-family:inherit"><option value="1">1배</option><option value="2">2배</option><option value="4">4배</option></select></label><button class="big primary" id="newRoom">새 방 만들기</button></div>'
+    + '<h3 style="margin-top:16px">이 기기에서 만든 방</h3><div class="roomList" id="roomList"></div></div>');
+  const rl = myRooms(); $('#roomList').innerHTML = rl.length ? rl.slice().reverse().map(r => '<button data-c="' + esc(r.code) + '">' + esc(r.code) + '<small>' + esc(nowStr(r.at)) + (r.memo ? ' · ' + esc(r.memo) : '') + '</small></button>').join('') : '<p class="sub">아직 만든 방이 없습니다.</p>';
+  document.querySelectorAll('#roomList button').forEach(b => b.onclick = () => tcRoom(b.dataset.c));
+  $('#newRoom').onclick = tcNewRoom;
+  await getDB(); const c = $('#tcConn'); if(c) c.textContent = DB.mock ? '체험 모드입니다(이 브라우저 안에서만 저장). 실제 수업에서는 인터넷에 연결된 상태로 여세요.' : '서버에 연결되었습니다. 수업마다(반마다) 새 방을 만들면 결과를 반별로 내려받을 수 있어요.';
+}
+async function tcNewRoom(){
+  await getDB();
+  const memo = (($('#memoIn') && $('#memoIn').value) || '').trim().slice(0, 20);
+  let code = ''; for(let k=0;k<6;k++){ code = 'SJ' + Array.from({length:4}, () => CODE_CH[Math.floor(Math.random()*CODE_CH.length)]).join(''); if(!(await DB.getRoom(code))) break; }
+  const speed = +(($('#spdIn') && $('#spdIn').value) || 1) || 1;
+  try{ await DB.createRoom(code, {hostUid:UID, kind:KIND, title:'수장의 길(주제 8)', memo, speed, createdAt:Date.now()}); }
+  catch(e){ console.error(e); toast('방을 만들지 못했어요. 인터넷 연결을 확인해 주세요.'); return; }
+  const rl = myRooms(); rl.push({code, at:Date.now(), memo}); ls.set('sj_rooms', rl.slice(-30));
+  tcRoom(code);
+}
+async function tcRoom(code){
+  await getDB(); TROOM = code;
+  const link = location.origin + location.pathname + '?room=' + code;
+  tcShell('<div class="tcGrid"><div class="panel navyCard"><p class="kicker">방 코드</p><div class="codeBig goldText">' + esc(code) + '</div><div class="qr" id="qr"></div><p class="linkTxt">' + esc(link) + '</p>'
+    + '<div class="tcBtns" style="margin-top:10px"><button class="chip" id="copyLink">링크 복사</button><button class="chip" id="otherRoom">다른 방</button></div>'
+    + '<div style="margin-top:14px"><p class="kicker" style="margin:0 0 6px">학생 게임 속도</p><div class="tcBtns" id="tSpd">' + [1,2,4].map(v => '<button class="chip" data-v="' + v + '">' + v + '배</button>').join('') + '</div><p class="mini" style="color:#aeb2c8;margin:6px 0 0;font-size:12px">바꾸면 게임 중인 학생 화면에도 바로 적용돼요.</p></div></div>'
+    + '<div class="panel navyCard"><div class="tcHead"><h3 style="margin:0">참여 학생 <span id="pCount"></span></h3><button class="btn" id="xlsxBtn">엑셀 내려받기</button></div>'
+    + '<div class="tblwrap" style="margin-top:10px"><table><thead><tr><th>학번</th><th>이름</th><th>상태</th><th>도전</th><th>진 엔딩</th><th>최고 엔딩</th><th>최근 엔딩</th><th>최근 붕당</th><th>세력·신임·공론</th><th>최근 완료</th></tr></thead><tbody id="pBody"></tbody></table></div></div></div>');
+  try{ drawQR($('#qr'), link, 240); }catch(e){}
+  $('#copyLink').onclick = () => { try{ navigator.clipboard.writeText(link); toast('링크를 복사했어요.'); }catch(e){ toast(link); } };
+  $('#otherRoom').onclick = () => { if(unwatchT){ unwatchT(); unwatchT = null; } tcHome(); };
+  $('#xlsxBtn').onclick = downloadXlsx;
+  document.querySelectorAll('#tSpd button').forEach(b => b.onclick = async () => { try{ await DB.updateRoom(code, {speed:+b.dataset.v}); toast('학생 게임 속도를 ' + b.dataset.v + '배로 바꿨어요'); }catch(e){ console.error(e); toast('속도를 바꾸지 못했어요'); } });
+  if(unwatchTR) unwatchTR(); unwatchTR = DB.watchRoom(code, d => { const s = (d && d.speed) || 1; document.querySelectorAll('#tSpd button').forEach(b => b.classList.toggle('on', +b.dataset.v === s)); });
+  const doc = await DB.getRoom(code); if(!doc){ toast('이 방을 찾을 수 없어요.'); }
+  if(unwatchT) unwatchT();
+  unwatchT = DB.watchPlayers(code, ps => { TPLAYERS = ps || {}; renderPlayers(); });
+}
+function sortedPlayers(){ return Object.entries(TPLAYERS).map(([id,p]) => ({id, ...p})).sort((a,b) => String(a.sid).localeCompare(String(b.sid)) || String(a.name).localeCompare(String(b.name))); }
+function renderPlayers(){
+  const ps = sortedPlayers(); const b = $('#pBody'); if(!b) return;
+  $('#pCount').textContent = '(' + ps.length + '명)';
+  b.innerHTML = ps.length ? ps.map(p => '<tr><td>' + esc(p.sid) + '</td><td>' + esc(p.name) + '</td><td class="' + (p.status === 'done' ? 'st-done' : 'st-play') + '">' + (p.status === 'done' ? '완료' : '하는 중') + '</td><td>' + (p.plays || 0) + '</td><td>' + (p.trueCount || 0) + '</td><td>' + esc(p.bestEnd || '-') + '</td><td>' + esc(p.lastEnd || '-') + '</td><td>' + esc(p.lastFac || '-') + '</td><td>' + (p.lastPow != null ? p.lastPow + ' · ' + p.lastTrust + ' · ' + p.lastPub : '-') + '</td><td>' + (p.lastAt ? esc(nowStr(p.lastAt)) : '-') + '</td></tr>').join('')
+    : '<tr><td colspan="10" style="color:#aeb2c8">아직 들어온 학생이 없습니다. 학생들에게 방 코드나 QR을 알려 주세요.</td></tr>';
+}
+function downloadXlsx(){
+  const ps = sortedPlayers();
+  const head = ['학번','이름','상태','도전 횟수','진 엔딩 횟수','최고 엔딩','최근 엔딩','최근 붕당','도달 연도','세력','신임','공론','수장 대수','사약 받은 수장'].concat(EVENTS.map(e => Math.floor(e.y) + ' ' + e.title)).concat(['최근 완료 시각','처음 들어온 시각']);
+  const rows = ps.map(p => [p.sid || '', p.name || '', p.status === 'done' ? '완료' : '하는 중', p.plays || 0, p.trueCount || 0, p.bestEnd || '', p.lastEnd || '', p.lastFac || '', p.lastYear != null ? p.lastYear : '', p.lastPow != null ? p.lastPow : '', p.lastTrust != null ? p.lastTrust : '', p.lastPub != null ? p.lastPub : '', p.lastLord != null ? p.lastLord : '', p.lastSayak != null ? p.lastSayak : '']
+    .concat(EVENTS.map(e => p['r_' + e.id] || '')).concat([p.lastAt ? nowStr(p.lastAt) : '', p.joinedAt ? nowStr(p.joinedAt) : '']));
+  const widths = [9,10,8,9,11,26,26,9,9,6,6,6,9,11].concat(EVENTS.map(() => 16)).concat([17,17]);
+  const blob = makeXlsx(head, rows, widths, '수장의 길 결과');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); const d = new Date();
+  a.download = '수장의길_' + TROOM + '_' + d.getFullYear() + String(d.getMonth() + 1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.xlsx';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+</script>
+</body></html>

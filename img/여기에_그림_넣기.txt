@@ -1,0 +1,15 @@
+「수장의 길」 그림 폴더 (판 2026-10-22 ①)
+이 img 폴더에 아래 이름 그대로 그림을 넣으세요. 확장자는 png·jpg·webp 아무거나 됩니다.
+그림이 없어도 게임은 돌아갑니다(간단한 그림·아이콘으로 대신 보임).
+
+[1] 「기울어진 저울」 붕당게임\img 폴더에서 그대로 복사할 그림 (13장)
+hall, king_seonjo, king_gwanghae, king_injo, king_hyojong, king_hyeonjong, king_sukjong, king_sukjong_late,
+st_bungdang(동서 분당 사건 그림), st_hwanguk(경신환국), st_prince(기사환국), st_restore(갑술환국), st_succession(1716 왕위 계승)
+
+[2] Codex로 새로 그릴 그림 (29장, 프롬프트: 붕당게임2\그림_프롬프트_한번에.txt)
+왕(배경 지우기): king_gyeongjong, king_yeongjo
+수장(배경 지우기): leader_1, leader_2, leader_3, leader_4, leader_5
+첫 화면: title
+이야기: st_inherit, st_sayak
+사건: ev_gichuk, ev_geonjeo, ev_bukin, ev_banjeong, ev_hwaju, ev_yesong, ev_noso, ev_gyeongjong, ev_yeongjo
+엔딩: end_true, end_normal1(조정의 한 귀퉁이에서), end_normal2(다음 대를 기약하며), end_normal3(살아남은 가문, 닫힌 출셋길), end_normal4(이름 없이 이어진 가문), end_bad, end_epilogue(세도 정치 에필로그), end_fall, end_dismissed, end_traitor
